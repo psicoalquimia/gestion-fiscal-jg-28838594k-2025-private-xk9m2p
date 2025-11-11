@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Fiscal - Javier Gómez</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2C5F2D 0%, #3d7f3f 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 30px;
+        }
+        
+        .header {
+            background: rgba(232, 220, 196, 0.95);
+            color: #2C5F2D;
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin: 0;
+        }
+        
+        .header-info {
+            text-align: right;
+            font-size: 0.9em;
+            color: #5D4E37;
+        }
+        
+        .alert-vencimiento {
+            background: #C67C4E;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding: 5px;
+            background: rgba(232, 220, 196, 0.3);
+            border-radius: 10px;
+        }
+        
+        .tab {
+            background: rgba(232, 220, 196, 0.6);
+            color: #2C5F2D;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .tab:hover {
+            background: rgba(232, 220, 196, 0.8);
+        }
+        
+        .tab.active {
+            background: #E8DCC4;
+            color: #2C5F2D;
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .content {
+            background: #E8DCC4;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            min-height: 500px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #2C5F2D 0%, #3d7f3f 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .card.secondary {
+            background: linear-gradient(135deg, #606C38 0%, #757f4a 100%);
+        }
+        
+        .card.warning {
+            background: linear-gradient(135deg, #C67C4E 0%, #d68a60 100%);
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #5D4E37;
+            font-size: 0.9em;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 2px solid #97BC62;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #5D4E37;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2C5F2D;
+            box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+        }
+        
+        .form-group input:read-only {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #2C5F2D 0%, #3d7f3f 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #606C38 0%, #757f4a 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #C67C4E 0%, #d68a60 100%);
+        }
+        
+        .btn-small {
+            padding: 6px 15px;
+            font-size: 13px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #2C5F2D 0%, #3d7f3f 100%);
+            color: white;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9f5;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .badge-amazon { background: #ff9900; color: white; }
+        .badge-upwork { background: #14a800; color: white; }
+        .badge-stripe { background: #635bff; color: white; }
+        .badge-otros { background: #757575; color: white; }
+        
+        .info-box {
+            background: rgba(151, 188, 98, 0.2);
+            border-left: 4px solid #97BC62;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            color: #5D4E37;
+        }
+        
+        .info-box strong {
+            color: #2C5F2D;
+        }
+        
+        .warning-box {
+            background: rgba(198, 124, 78, 0.2);
+            border-left: 4px solid #C67C4E;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            color: #5D4E37;
+        }
+        
+        .modelo-box {
+            background: white;
+            border: 2px solid #97BC62;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .modelo-title {
+            font-size: 1.5em;
+            color: #2C5F2D;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .row-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .row-item:last-child {
+            border-bottom: none;
+        }
+        
+        .row-item.total {
+            background: rgba(44, 95, 45, 0.1);
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2C5F2D;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        
+        .acciones {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .conversor-usd {
+            background: white;
+            border: 2px solid #97BC62;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .conversor-usd h4 {
+            color: #2C5F2D;
+            margin-bottom: 10px;
+        }
+        
+        .conversor-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.5em; }
+            .grid-3, .grid-2 { grid-template-columns: 1fr; }
+            table { font-size: 0.8em; }
+            th, td { padding: 8px; }
+            .content { padding: 15px; }
+            .conversor-grid { grid-template-columns: 1fr; }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #2C5F2D;
+        }
+        
+        .factura-preview {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .factura-header {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2C5F2D;
+            margin-bottom: 20px;
+        }
+        
+        .factura-title {
+            font-size: 2em;
+            color: #2C5F2D;
+            font-weight: bold;
+        }
+        
+        .datos-section {
+            margin: 20px 0;
+        }
+        
+        .datos-section h3 {
+            color: #2C5F2D;
+            margin-bottom: 10px;
+        }
+        
+        .datos-section p {
+            margin: 5px 0;
+            color: #5D4E37;
+        }
+        
+        .tabla-factura {
+            margin: 30px 0;
+        }
+        
+        .totales-factura {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        .linea-total {
+            display: flex;
+            justify-content: flex-end;
+            gap: 30px;
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+        
+        .linea-total.final {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2C5F2D;
+            border-top: 2px solid #2C5F2D;
+            padding-top: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🌿 Sistema Fiscal Autónomo</h1>
+                <p style="margin: 5px 0 0 0; color: #5D4E37;">Javier Gómez Fernández - NIF: 28838594-K</p>
+            </div>
+            <div class="header-info">
+                <div><strong>Alta:</strong> 10/11/2025</div>
+                <div><strong>Actividad:</strong> 774-2 Traductores</div>
+                <div><strong>Retención:</strong> 7% (3 años)</div>
+            </div>
+        </div>
+        
+        <div id="alertaVencimiento" class="alert-vencimiento" style="display: none;">
+            ⏰ <span id="textoAlerta"></span>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="cambiarTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="cambiarTab('facturas')">📄 Facturas</button>
+            <button class="tab" onclick="cambiarTab('gastos')">💰 Gastos</button>
+            <button class="tab" onclick="cambiarTab('modelo303')">📋 Modelo 303</button>
+            <button class="tab" onclick="cambiarTab('modelo130')">📋 Modelo 130</button>
+            <button class="tab" onclick="cambiarTab('resumen')">📈 Resumen</button>
+            <button class="tab" onclick="cambiarTab('utilidades')">🔧 Utilidades</button>
+        </div>
+        
+        <div class="content">
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="tab-content active">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">Panel de Control - 4T 2025</h2>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <h3>💶 Ingresos Totales</h3>
+                        <div class="value" id="dashIngresos">0,00 €</div>
+                    </div>
+                    <div class="card warning">
+                        <h3>💸 Gastos Totales</h3>
+                        <div class="value" id="dashGastos">0,00 €</div>
+                    </div>
+                    <div class="card secondary">
+                        <h3>📊 Beneficio Neto</h3>
+                        <div class="value" id="dashBeneficio">0,00 €</div>
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>🔄 IVA Situación</h3>
+                        <div class="value" id="dashIva">0,00 €</div>
+                        <small>A ingresar (+) / A devolver (-)</small>
+                    </div>
+                    <div class="card secondary">
+                        <h3>💼 Retenciones IRPF</h3>
+                        <div class="value" id="dashRetenciones">0,00 €</div>
+                        <small>Ya pagadas a Hacienda</small>
+                    </div>
+                </div>
+                
+                <h3 style="color: #2C5F2D; margin: 25px 0 15px;">Ingresos por Fuente</h3>
+                <div class="grid-3">
+                    <div class="card" style="background: linear-gradient(135deg, #ff9900 0%, #ff7700 100%);">
+                        <h3>📚 Amazon KDP</h3>
+                        <div class="value" id="dashAmazon">0,00 €</div>
+                    </div>
+                    <div class="card" style="background: linear-gradient(135deg, #14a800 0%, #0f8000 100%);">
+                        <h3>🌍 UpWork</h3>
+                        <div class="value" id="dashUpwork">0,00 €</div>
+                    </div>
+                    <div class="card" style="background: linear-gradient(135deg, #635bff 0%, #4d44dd 100%);">
+                        <h3>💳 Stripe</h3>
+                        <div class="value" id="dashStripe">0,00 €</div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <strong>📅 Próximo vencimiento:</strong> 20 de Enero 2026 - Modelos 303 y 130 (4T 2025)
+                </div>
+            </div>
+            
+            <!-- FACTURAS -->
+            <div id="facturas" class="tab-content">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">Generador de Facturas</h2>
+                
+                <div class="info-box">
+                    <strong>ℹ️ Tus datos están precargados.</strong> Solo completa los datos del cliente y el servicio.
+                </div>
+                
+                <div class="form-grid" style="max-width: 600px;">
+                    <div class="form-group">
+                        <label>Tipo de Factura *</label>
+                        <select id="tipoFactura" onchange="ajustarTipoFactura()">
+                            <option value="amazon">📚 Amazon KDP</option>
+                            <option value="upwork">🌍 UpWork (USD)</option>
+                            <option value="stripe">💳 Stripe - Coaching</option>
+                            <option value="otros">📋 Otros Servicios</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nº Factura *</label>
+                        <input type="text" id="numFactura" value="2025/001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Fecha *</label>
+                        <input type="date" id="fechaFactura">
+                    </div>
+                </div>
+                
+                <div id="conversorUSD" class="conversor-usd" style="display: none;">
+                    <h4>💱 Conversor USD → EUR</h4>
+                    <div class="conversor-grid">
+                        <div class="form-group">
+                            <label>Cantidad USD *</label>
+                            <input type="number" step="0.01" id="cantidadUSD" placeholder="0.00" onchange="convertirUSD()">
+                        </div>
+                        <button class="btn btn-small" onclick="obtenerTipoCambio()" style="margin-top: 20px;">🔄 Obtener Cambio</button>
+                        <div class="form-group">
+                            <label>Tipo de Cambio</label>
+                            <input type="number" step="0.0001" id="tipoCambio" placeholder="1.0800" onchange="convertirUSD()">
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; padding: 10px; background: rgba(151, 188, 98, 0.2); border-radius: 5px;">
+                        <strong>Equivalente EUR:</strong> <span id="equivalenteEUR">0,00 €</span>
+                    </div>
+                </div>
+                
+                <h3 style="color: #2C5F2D; margin: 20px 0 10px;">Datos del Cliente</h3>
+                <div class="form-grid" id="datosCliente">
+                    <!-- Se rellena dinámicamente -->
+                </div>
+                
+                <h3 style="color: #2C5F2D; margin: 20px 0 10px;">Detalles del Servicio</h3>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Descripción *</label>
+                        <textarea id="descripcionServ" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Base Imponible (€) *</label>
+                        <input type="number" step="0.01" id="baseImp" placeholder="0.00" onchange="calcularTotalesFactura()">
+                    </div>
+                    
+                    <div class="form-group" id="grupoIVA">
+                        <label>% IVA</label>
+                        <input type="number" id="porcIVA" readonly>
+                    </div>
+                    
+                    <div class="form-group" id="grupoRetencion">
+                        <label>% Retención IRPF</label>
+                        <input type="number" id="porcRetencion" value="7" readonly>
+                    </div>
+                </div>
+                
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label>IVA (€)</label>
+                        <input type="number" step="0.01" id="importeIVA" readonly style="background: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>Retención (€)</label>
+                        <input type="number" step="0.01" id="importeRetencion" readonly style="background: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #2C5F2D; font-size: 1.1em;">TOTAL (€)</label>
+                        <input type="number" step="0.01" id="totalFactura" readonly style="background: rgba(44, 95, 45, 0.1); font-weight: bold; font-size: 1.2em;">
+                    </div>
+                </div>
+                
+                <div class="acciones">
+                    <button class="btn" onclick="guardarFactura()">💾 Guardar Factura</button>
+                    <button class="btn btn-secondary" onclick="previsualizarFactura()">👁️ Vista Previa</button>
+                    <button class="btn btn-warning" onclick="limpiarFormularioFactura()">🔄 Nueva</button>
+                </div>
+                
+                <div id="vistaPrevia" style="display: none;"></div>
+                
+                <h3 style="color: #2C5F2D; margin: 30px 0 15px;">📋 Facturas Registradas</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nº</th>
+                            <th>Tipo</th>
+                            <th>Cliente</th>
+                            <th>Base</th>
+                            <th>IVA</th>
+                            <th>Ret.</th>
+                            <th>Total</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaFacturas">
+                        <tr><td colspan="9" style="text-align: center; color: #999;">No hay facturas registradas</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- GASTOS -->
+            <div id="gastos" class="tab-content">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">Registro de Gastos Deducibles</h2>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Importante:</strong> Solo registra gastos deducibles relacionados con tu actividad. Guarda TODAS las facturas/tickets.
+                </div>
+                
+                <h3 style="color: #2C5F2D; margin: 20px 0 10px;">Nuevo Gasto</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Fecha *</label>
+                        <input type="date" id="fechaGasto">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Categoría *</label>
+                        <select id="categoriaGasto">
+                            <option value="cuota_ss">💼 Cuota Autónomos</option>
+                            <option value="comisiones_amazon">📚 Comisiones Amazon</option>
+                            <option value="comisiones_upwork">🌍 Comisiones UpWork</option>
+                            <option value="comisiones_stripe">💳 Comisiones Stripe</option>
+                            <option value="publicidad">📢 Publicidad Amazon</option>
+                            <option value="software">💻 Software (Canva, Claude AI, etc)</option>
+                            <option value="formacion">📖 Formación</option>
+                            <option value="internet_movil">📱 Internet/Móvil (30%)</option>
+                            <option value="suministros">⚡ Suministros Casa (30%)</option>
+                            <option value="hosting">🌐 Hosting/Dominio</option>
+                            <option value="material">📎 Material Oficina</option>
+                            <option value="otros">📋 Otros</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Proveedor *</label>
+                        <input type="text" id="proveedorGasto" placeholder="Nombre del proveedor">
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Concepto *</label>
+                        <input type="text" id="conceptoGasto" placeholder="Descripción del gasto">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Base Imponible (€) *</label>
+                        <input type="number" step="0.01" id="baseGasto" placeholder="0.00" onchange="calcularTotalesGasto()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>% IVA</label>
+                        <select id="porcIVAGasto" onchange="calcularTotalesGasto()">
+                            <option value="0">0% (Sin IVA)</option>
+                            <option value="4">4%</option>
+                            <option value="10">10%</option>
+                            <option value="21" selected>21%</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>% Deducible</label>
+                        <select id="porcDeducible">
+                            <option value="100" selected>100% (Total)</option>
+                            <option value="30">30% (Proporción)</option>
+                            <option value="50">50% (Parcial)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>IVA (€)</label>
+                        <input type="number" step="0.01" id="ivaGasto" readonly style="background: #f5f5f5;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Total (€)</label>
+                        <input type="number" step="0.01" id="totalGasto" readonly style="background: #f5f5f5;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nº Factura/Ticket</label>
+                        <input type="text" id="numeroGasto" placeholder="Referencia">
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="guardarGasto()">💾 Guardar Gasto</button>
+                
+                <h3 style="color: #2C5F2D; margin: 30px 0 15px;">📋 Gastos Registrados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Proveedor</th>
+                            <th>Concepto</th>
+                            <th>Base</th>
+                            <th>IVA</th>
+                            <th>Total</th>
+                            <th>% Ded.</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaGastos">
+                        <tr><td colspan="9" style="text-align: center; color: #999;">No hay gastos registrados</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- MODELO 303 -->
+            <div id="modelo303" class="tab-content">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">Modelo 303 - Declaración Trimestral IVA</h2>
+                
+                <div class="info-box">
+                    <strong>📋 Plazo:</strong> Hasta el día 20 del mes siguiente al trimestre (20 Enero, Abril, Julio, Octubre)
+                </div>
+                
+                <div class="form-grid" style="max-width: 400px;">
+                    <div class="form-group">
+                        <label>Selecciona Trimestre</label>
+                        <select id="trimestre303" onchange="calcular303()">
+                            <option value="4-2025" selected>4T 2025 (Nov-Dic)</option>
+                            <option value="1-2026">1T 2026 (Ene-Feb-Mar)</option>
+                            <option value="2-2026">2T 2026 (Abr-May-Jun)</option>
+                            <option value="3-2026">3T 2026 (Jul-Ago-Sep)</option>
+                            <option value="4-2026">4T 2026 (Oct-Nov-Dic)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modelo-box">
+                    <div class="modelo-title">IVA REPERCUTIDO (Cobrado a clientes)</div>
+                    
+                    <div class="row-item">
+                        <span>Base imponible operaciones al 21% (Coaching):</span>
+                        <strong id="m303_base21">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Cuota IVA 21%:</span>
+                        <strong id="m303_iva21">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Operaciones EXENTAS (Amazon sin IVA, UpWork):</span>
+                        <strong id="m303_exentas">0,00 €</strong>
+                    </div>
+                    <div class="row-item total">
+                        <span>TOTAL IVA REPERCUTIDO:</span>
+                        <strong id="m303_totalRep">0,00 €</strong>
+                    </div>
+                </div>
+                
+                <div class="modelo-box">
+                    <div class="modelo-title">IVA SOPORTADO (Pagado en gastos)</div>
+                    
+                    <div class="row-item">
+                        <span>Cuota IVA soportado deducible:</span>
+                        <strong id="m303_ivaSop">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Base imponible gastos:</span>
+                        <strong id="m303_baseGastos">0,00 €</strong>
+                    </div>
+                </div>
+                
+                <div class="modelo-box" style="border: 3px solid #2C5F2D;">
+                    <div class="modelo-title">🎯 RESULTADO</div>
+                    <div class="row-item total" style="font-size: 1.4em;">
+                        <span id="m303_textoResultado">A INGRESAR:</span>
+                        <strong id="m303_resultado">0,00 €</strong>
+                    </div>
+                </div>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Recuerda:</strong> Este cálculo es orientativo. Presenta el modelo oficial a través de la Sede Electrónica de la AEAT.
+                </div>
+            </div>
+            
+            <!-- MODELO 130 -->
+            <div id="modelo130" class="tab-content">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">Modelo 130 - Pago Fraccionado IRPF</h2>
+                
+                <div class="info-box">
+                    <strong>📋 ¿Debo presentarlo?</strong> Solo si MENOS del 70% de tus ingresos tienen retención.
+                </div>
+                
+                <div class="form-grid" style="max-width: 400px;">
+                    <div class="form-group">
+                        <label>Selecciona Trimestre</label>
+                        <select id="trimestre130" onchange="calcular130()">
+                            <option value="4-2025" selected>4T 2025 (Nov-Dic)</option>
+                            <option value="1-2026">1T 2026 (Ene-Feb-Mar)</option>
+                            <option value="2-2026">2T 2026 (Abr-May-Jun)</option>
+                            <option value="3-2026">3T 2026 (Jul-Ago-Sep)</option>
+                            <option value="4-2026">4T 2026 (Oct-Nov-Dic)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modelo-box">
+                    <div class="modelo-title">Análisis de Obligación</div>
+                    
+                    <div class="row-item">
+                        <span>Ingresos CON retención (Amazon):</span>
+                        <strong id="m130_conRet">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Ingresos SIN retención (UpWork + Stripe particulares):</span>
+                        <strong id="m130_sinRet">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>TOTAL ingresos trimestre:</span>
+                        <strong id="m130_totalIng">0,00 €</strong>
+                    </div>
+                    <div class="row-item total">
+                        <span>% de ingresos CON retención:</span>
+                        <strong id="m130_porcentaje">0%</strong>
+                    </div>
+                </div>
+                
+                <div id="m130_obligacionBox" class="modelo-box"></div>
+                
+                <div id="m130_calculoBox" class="modelo-box" style="display: none;">
+                    <div class="modelo-title">💰 Cálculo Modelo 130</div>
+                    
+                    <div class="row-item">
+                        <span>Ingresos del trimestre:</span>
+                        <strong id="m130_ingTrim">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Gastos deducibles del trimestre:</span>
+                        <strong id="m130_gastosTrim">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Rendimiento neto (Ingresos - Gastos):</span>
+                        <strong id="m130_rendNeto">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>Pago fraccionado (20% s/ rendimiento):</span>
+                        <strong id="m130_pago20">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>(-) Retenciones ya soportadas:</span>
+                        <strong id="m130_retenciones">0,00 €</strong>
+                    </div>
+                    <div class="row-item">
+                        <span>(-) Pagos fraccionados anteriores (año):</span>
+                        <strong id="m130_pagosAnt">0,00 €</strong>
+                    </div>
+                    <div class="row-item total" style="font-size: 1.4em;">
+                        <span>RESULTADO A INGRESAR:</span>
+                        <strong id="m130_resultado">0,00 €</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RESUMEN -->
+            <div id="resumen" class="tab-content">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">Resumen Anual 2025</h2>
+                
+                <div class="grid-2">
+                    <div class="modelo-box">
+                        <h3 style="color: #2C5F2D; margin-bottom: 15px;">💶 Ingresos por Fuente</h3>
+                        <div class="row-item">
+                            <span>Amazon KDP:</span>
+                            <strong id="res_amazon">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>UpWork:</span>
+                            <strong id="res_upwork">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>Stripe (Coaching):</span>
+                            <strong id="res_stripe">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>Otros:</span>
+                            <strong id="res_otros">0,00 €</strong>
+                        </div>
+                        <div class="row-item total">
+                            <span>TOTAL INGRESOS:</span>
+                            <strong id="res_totalIng">0,00 €</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="modelo-box">
+                        <h3 style="color: #2C5F2D; margin-bottom: 15px;">💸 Gastos por Categoría</h3>
+                        <div class="row-item">
+                            <span>Cuota Autónomos:</span>
+                            <strong id="res_cuota">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>Comisiones (Amazon/UpWork/Stripe):</span>
+                            <strong id="res_comisiones">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>Software y Herramientas:</span>
+                            <strong id="res_software">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>Publicidad:</span>
+                            <strong id="res_publicidad">0,00 €</strong>
+                        </div>
+                        <div class="row-item">
+                            <span>Otros gastos:</span>
+                            <strong id="res_otrosGastos">0,00 €</strong>
+                        </div>
+                        <div class="row-item total">
+                            <span>TOTAL GASTOS:</span>
+                            <strong id="res_totalGastos">0,00 €</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modelo-box" style="border: 3px solid #2C5F2D;">
+                    <div class="modelo-title">📊 Resumen Fiscal Anual</div>
+                    <div class="grid-2">
+                        <div>
+                            <div class="row-item">
+                                <span>Beneficio Neto:</span>
+                                <strong id="res_beneficio">0,00 €</strong>
+                            </div>
+                            <div class="row-item">
+                                <span>IVA Repercutido:</span>
+                                <strong id="res_ivaRep">0,00 €</strong>
+                            </div>
+                            <div class="row-item">
+                                <span>IVA Soportado:</span>
+                                <strong id="res_ivaSop">0,00 €</strong>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="row-item">
+                                <span>Retenciones IRPF:</span>
+                                <strong id="res_retenciones">0,00 €</strong>
+                            </div>
+                            <div class="row-item">
+                                <span>Nº Facturas emitidas:</span>
+                                <strong id="res_numFacturas">0</strong>
+                            </div>
+                            <div class="row-item">
+                                <span>Nº Gastos registrados:</span>
+                                <strong id="res_numGastos">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <strong>📝 Preparación Declaración de la Renta:</strong> Estos datos te servirán para completar tu declaración. Conserva todas las facturas y justificantes.
+                </div>
+            </div>
+            
+            <!-- UTILIDADES -->
+            <div id="utilidades" class="tab-content">
+                <h2 style="color: #2C5F2D; margin-bottom: 20px;">🔧 Herramientas Útiles</h2>
+                
+                <div class="modelo-box">
+                    <h3 style="color: #2C5F2D; margin-bottom: 15px;">💱 Conversor USD → EUR</h3>
+                    <div class="conversor-grid">
+                        <div class="form-group">
+                            <label>Cantidad USD</label>
+                            <input type="number" step="0.01" id="util_usd" placeholder="100.00">
+                        </div>
+                        <button class="btn btn-small" onclick="obtenerTipoCambioUtil()">🔄 Obtener</button>
+                        <div class="form-group">
+                            <label>Tipo de Cambio</label>
+                            <input type="number" step="0.0001" id="util_cambio" placeholder="1.0800">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="convertirUSDUtil()" style="margin-top: 10px;">Convertir</button>
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(151, 188, 98, 0.2); border-radius: 8px;">
+                        <strong style="font-size: 1.2em;">Resultado: <span id="util_resultado">0,00 €</span></strong>
+                    </div>
+                </div>
+                
+                <div class="modelo-box">
+                    <h3 style="color: #2C5F2D; margin-bottom: 15px;">🧮 Calculadora Retención Inversa</h3>
+                    <p style="margin-bottom: 15px; color: #5D4E37;">Si recibes X euros con retención aplicada, ¿cuál era la base imponible original?</p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Cantidad Recibida (€)</label>
+                            <input type="number" step="0.01" id="calc_recibido" placeholder="93.00">
+                        </div>
+                        <div class="form-group">
+                            <label>% Retención</label>
+                            <select id="calc_retencion">
+                                <option value="7" selected>7%</option>
+                                <option value="15">15%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="calcularRetencionInversa()">Calcular</button>
+                    <div id="calc_resultado" style="display: none; margin-top: 15px; padding: 15px; background: rgba(151, 188, 98, 0.2); border-radius: 8px;">
+                        <div><strong>Base Imponible:</strong> <span id="calc_base">0,00 €</span></div>
+                        <div><strong>Retención aplicada:</strong> <span id="calc_ret">0,00 €</span></div>
+                        <div><strong>Total recibido:</strong> <span id="calc_total">0,00 €</span></div>
+                    </div>
+                </div>
+                
+                <div class="modelo-box">
+                    <h3 style="color: #2C5F2D; margin-bottom: 15px;">💾 Gestión de Datos</h3>
+                    <div class="acciones">
+                        <button class="btn" onclick="exportarDatos()">📥 Exportar Todo (JSON)</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar Datos</button>
+                        <button class="btn btn-warning" onclick="limpiarTodosDatos()">🗑️ Limpiar Todo</button>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importarDatos(event)">
+                    <div class="info-box" style="margin-top: 15px;">
+                        <strong>ℹ️ Backup automático:</strong> Tus datos se guardan automáticamente en el navegador. Te recomendamos exportar una copia de seguridad mensualmente.
+                    </div>
+                </div>
+                
+                <div class="modelo-box">
+                    <h3 style="color: #2C5F2D; margin-bottom: 15px;">📅 Calendario Fiscal 2026</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Vencimiento</th>
+                                <th>Modelos</th>
+                                <th>Periodo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>20 Enero 2026</strong></td>
+                                <td>303 + 130</td>
+                                <td>4T 2025</td>
+                            </tr>
+                            <tr>
+                                <td><strong>30 Enero 2026</strong></td>
+                                <td>390 (Resumen IVA)</td>
+                                <td>Anual 2025</td>
+                            </tr>
+                            <tr>
+                                <td><strong>20 Abril 2026</strong></td>
+                                <td>303 + 130</td>
+                                <td>1T 2026</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Abril-Junio 2026</strong></td>
+                                <td>100 (Renta)</td>
+                                <td>Anual 2025</td>
+                            </tr>
+                            <tr>
+                                <td><strong>20 Julio 2026</strong></td>
+                                <td>303 + 130</td>
+                                <td>2T 2026</td>
+                            </tr>
+                            <tr>
+                                <td><strong>20 Octubre 2026</strong></td>
+                                <td>303 + 130</td>
+                                <td>3T 2026</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== DATOS Y VARIABLES GLOBALES ====================
+        const MIS_DATOS = {
+            nombre: "Javier Gómez Fernández",
+            nif: "28838594-K",
+            direccion: "C/Artemisa S/N, Urbanización las Azucenas, Casa 20, Lepe, Huelva, España",
+            actividad: "774-2 Traductores e intérpretes",
+            retencion: 7,
+            fechaAlta: "2025-11-10"
+        };
+        
+        let facturas = JSON.parse(localStorage.getItem('facturas') || '[]');
+        let gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+        let contadorFactura = parseInt(localStorage.getItem('contadorFactura') || '1');
+        
+        // ==================== INICIALIZACIÓN ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('fechaFactura').valueAsDate = new Date();
+            document.getElementById('fechaGasto').valueAsDate = new Date();
+            ajustarTipoFactura();
+            actualizarDashboard();
+            actualizarListaFacturas();
+            actualizarListaGastos();
+            verificarVencimientos();
+            calcular303();
+            calcular130();
+            actualizarResumen();
+        });
+        
+        // ==================== NAVEGACIÓN TABS ====================
+        function cambiarTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            if (tabId === 'modelo303') calcular303();
+            if (tabId === 'modelo130') calcular130();
+            if (tabId === 'resumen') actualizarResumen();
+        }
+        
+        // ==================== VERIFICAR VENCIMIENTOS ====================
+        function verificarVencimientos() {
+            const hoy = new Date();
+            const proximoVencimiento = new Date('2026-01-20');
+            const diasRestantes = Math.ceil((proximoVencimiento - hoy) / (1000 * 60 * 60 * 24));
+            
+            if (diasRestantes <= 30 && diasRestantes > 0) {
+                const alerta = document.getElementById('alertaVencimiento');
+                const texto = document.getElementById('textoAlerta');
+                texto.textContent = `Quedan ${diasRestantes} días para presentar Modelos 303 y 130 (4T 2025) - Vencimiento: 20 Enero 2026`;
+                alerta.style.display = 'block';
+            }
+        }
+        
+        // ==================== FACTURAS - AJUSTAR TIPO ====================
+        function ajustarTipoFactura() {
+            const tipo = document.getElementById('tipoFactura').value;
+            const conversorUSD = document.getElementById('conversorUSD');
+            const datosCliente = document.getElementById('datosCliente');
+            const porcIVA = document.getElementById('porcIVA');
+            const porcRetencion = document.getElementById('porcRetencion');
+            const descripcion = document.getElementById('descripcionServ');
+            
+            conversorUSD.style.display = 'none';
+            
+            switch(tipo) {
+                case 'amazon':
+                    datosCliente.innerHTML = `
+                        <div class="form-group">
+                            <label>Cliente</label>
+                            <input type="text" value="Amazon Media EU S.à.r.l. Sucursal España" readonly style="background: #f5f5f5;">
+                        </div>
+                        <div class="form-group">
+                            <label>NIF</label>
+                            <input type="text" value="W-0184081-H" readonly style="background: #f5f5f5;">
+                        </div>
+                    `;
+                    porcIVA.value = 0;
+                    porcRetencion.value = 7;
+                    descripcion.value = "Regalías por venta de libros en Amazon KDP - Periodo: [indicar mes]";
+                    break;
+                    
+                case 'upwork':
+                    conversorUSD.style.display = 'block';
+                    datosCliente.innerHTML = `
+                        <div class="form-group">
+                            <label>Cliente *</label>
+                            <input type="text" id="nombreCliente" placeholder="Nombre del cliente USA">
+                        </div>
+                        <div class="form-group">
+                            <label>País</label>
+                            <input type="text" value="Estados Unidos" readonly style="background: #f5f5f5;">
+                        </div>
+                    `;
+                    porcIVA.value = 0;
+                    porcRetencion.value = 0;
+                    descripcion.value = "Servicios de corrección y edición de artículos de psicología";
+                    break;
+                    
+                case 'stripe':
+                    datosCliente.innerHTML = `
+                        <div class="form-group">
+                            <label>Cliente *</label>
+                            <input type="text" id="nombreCliente" placeholder="Nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label>NIF (si es empresa)</label>
+                            <input type="text" id="nifCliente" placeholder="12345678X">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="tipoClienteStripe" onchange="ajustarRetencionStripe()">
+                                <option value="particular" selected>Particular</option>
+                                <option value="empresa">Empresa/Autónomo</option>
+                            </select>
+                        </div>
+                    `;
+                    porcIVA.value = 21;
+                    porcRetencion.value = 0;
+                    descripcion.value = "Servicios de coaching profesional";
+                    break;
+                    
+                case 'otros':
+                    datosCliente.innerHTML = `
+                        <div class="form-group">
+                            <label>Cliente *</label>
+                            <input type="text" id="nombreCliente" placeholder="Nombre del cliente">
+                        </div>
+                        <div class="form-group">
+                            <label>NIF</label>
+                            <input type="text" id="nifCliente" placeholder="12345678X (opcional)">
+                        </div>
+                    `;
+                    porcIVA.value = 21;
+                    porcRetencion.value = 0;
+                    descripcion.value = "";
+                    break;
+            }
+            
+            calcularTotalesFactura();
+        }
+        
+        function ajustarRetencionStripe() {
+            const tipo = document.getElementById('tipoClienteStripe').value;
+            document.getElementById('porcRetencion').value = tipo === 'empresa' ? 7 : 0;
+            calcularTotalesFactura();
+        }
+        
+        // ==================== CONVERSOR USD ====================
+        async function obtenerTipoCambio() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳';
+            
+            try {
+                // Simulación - En producción usarías una API real del BCE
+                const tipoCambio = 1.0850; // Valor aproximado actual
+                document.getElementById('tipoCambio').value = tipoCambio;
+                convertirUSD();
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Obtener Cambio';
+                }, 1000);
+            } catch (error) {
+                alert('No se pudo obtener el tipo de cambio. Introdúcelo manualmente.');
+                btn.disabled = false;
+                btn.textContent = '🔄 Obtener Cambio';
+            }
+        }
+        
+        function convertirUSD() {
+            const usd = parseFloat(document.getElementById('cantidadUSD').value) || 0;
+            const cambio = parseFloat(document.getElementById('tipoCambio').value) || 0;
+            
+            if (usd > 0 && cambio > 0) {
+                const eur = usd / cambio;
+                document.getElementById('equivalenteEUR').textContent = eur.toFixed(2) + ' €';
+                document.getElementById('baseImp').value = eur.toFixed(2);
+                calcularTotalesFactura();
+            }
+        }
+        
+        // ==================== CALCULAR TOTALES FACTURA ====================
+        function calcularTotalesFactura() {
+            const base = parseFloat(document.getElementById('baseImp').value) || 0;
+            const porcIVA = parseFloat(document.getElementById('porcIVA').value) || 0;
+            const porcRet = parseFloat(document.getElementById('porcRetencion').value) || 0;
+            
+            const iva = (base * porcIVA) / 100;
+            const retencion = (base * porcRet) / 100;
+            const total = base + iva - retencion;
+            
+            document.getElementById('importeIVA').value = iva.toFixed(2);
+            document.getElementById('importeRetencion').value = retencion.toFixed(2);
+            document.getElementById('totalFactura').value = total.toFixed(2);
+        }
+        
+        // ==================== GUARDAR FACTURA ====================
+        function guardarFactura() {
+            const tipo = document.getElementById('tipoFactura').value;
+            const fecha = document.getElementById('fechaFactura').value;
+            const numero = document.getElementById('numFactura').value;
+            const base = parseFloat(document.getElementById('baseImp').value);
+            const descripcion = document.getElementById('descripcionServ').value;
+            
+            if (!fecha || !numero || !base || !descripcion) {
+                alert('Por favor, completa todos los campos obligatorios (*)');
+                return;
+            }
+            
+            let cliente = '';
+            if (tipo === 'amazon') {
+                cliente = 'Amazon Media EU';
+            } else {
+                const nombreCliente = document.getElementById('nombreCliente');
+                if (nombreCliente) {
+                    cliente = nombreCliente.value;
+                    if (!cliente) {
+                        alert('Por favor, indica el nombre del cliente');
+                        return;
+                    }
+                }
+            }
+            
+            const iva = parseFloat(document.getElementById('importeIVA').value);
+            const retencion = parseFloat(document.getElementById('importeRetencion').value);
+            const total = parseFloat(document.getElementById('totalFactura').value);
+            const porcIVA = parseFloat(document.getElementById('porcIVA').value);
+            const porcRet = parseFloat(document.getElementById('porcRetencion').value);
+            
+            const factura = {
+                id: Date.now(),
+                fecha,
+                numero,
+                tipo,
+                cliente,
+                descripcion,
+                base,
+                porcIVA,
+                iva,
+                porcRetencion: porcRet,
+                retencion,
+                total
+            };
+            
+            facturas.push(factura);
+            localStorage.setItem('facturas', JSON.stringify(facturas));
+            
+            // Incrementar contador
+            const partes = numero.split('/');
+            if (partes.length === 2) {
+                const num = parseInt(partes[1]) + 1;
+                document.getElementById('numFactura').value = partes[0] + '/' + num.toString().padStart(3, '0');
+            }
+            
+            actualizarListaFacturas();
+            actualizarDashboard();
+            limpiarFormularioFactura();
+            
+            alert('✅ Factura guardada correctamente');
+        }
+        
+        function limpiarFormularioFactura() {
+            document.getElementById('baseImp').value = '';
+            document.getElementById('importeIVA').value = '';
+            document.getElementById('importeRetencion').value = '';
+            document.getElementById('totalFactura').value = '';
+            document.getElementById('cantidadUSD').value = '';
+            document.getElementById('equivalenteEUR').textContent = '0,00 €';
+            
+            const nombreCliente = document.getElementById('nombreCliente');
+            if (nombreCliente) nombreCliente.value = '';
+            
+            ajustarTipoFactura();
+        }
+        
+        // ==================== ACTUALIZAR LISTA FACTURAS ====================
+        function actualizarListaFacturas() {
+            const tbody = document.getElementById('listaFacturas');
+            
+            if (facturas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">No hay facturas registradas</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = facturas.map(f => {
+                let badgeClass = 'badge-otros';
+                let icono = '📋';
+                if (f.tipo === 'amazon') { badgeClass = 'badge-amazon'; icono = '📚'; }
+                if (f.tipo === 'upwork') { badgeClass = 'badge-upwork'; icono = '🌍'; }
+                if (f.tipo === 'stripe') { badgeClass = 'badge-stripe'; icono = '💳'; }
+                
+                return `
+                    <tr>
+                        <td>${new Date(f.fecha).toLocaleDateString('es-ES')}</td>
+                        <td><strong>${f.numero}</strong></td>
+                        <td><span class="badge ${badgeClass}">${icono} ${f.tipo}</span></td>
+                        <td>${f.cliente}</td>
+                        <td>${f.base.toFixed(2)} €</td>
+                        <td>${f.iva.toFixed(2)} €</td>
+                        <td>${f.retencion.toFixed(2)} €</td>
+                        <td><strong>${f.total.toFixed(2)} €</strong></td>
+                        <td>
+                            <button class="btn btn-small btn-warning" onclick="eliminarFactura(${f.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function eliminarFactura(id) {
+            if (confirm('¿Estás seguro de eliminar esta factura?')) {
+                facturas = facturas.filter(f => f.id !== id);
+                localStorage.setItem('facturas', JSON.stringify(facturas));
+                actualizarListaFacturas();
+                actualizarDashboard();
+            }
+        }
+        
+        // ==================== GASTOS ====================
+        function calcularTotalesGasto() {
+            const base = parseFloat(document.getElementById('baseGasto').value) || 0;
+            const porcIVA = parseFloat(document.getElementById('porcIVAGasto').value) || 0;
+            
+            const iva = (base * porcIVA) / 100;
+            const total = base + iva;
+            
+            document.getElementById('ivaGasto').value = iva.toFixed(2);
+            document.getElementById('totalGasto').value = total.toFixed(2);
+        }
+        
+        function guardarGasto() {
+            const fecha = document.getElementById('fechaGasto').value;
+            const categoria = document.getElementById('categoriaGasto').value;
+            const proveedor = document.getElementById('proveedorGasto').value;
+            const concepto = document.getElementById('conceptoGasto').value;
+            const base = parseFloat(document.getElementById('baseGasto').value);
+            
+            if (!fecha || !proveedor || !concepto || !base) {
+                alert('Por favor, completa todos los campos obligatorios (*)');
+                return;
+            }
+            
+            const porcIVA = parseFloat(document.getElementById('porcIVAGasto').value);
+            const porcDeducible = parseFloat(document.getElementById('porcDeducible').value);
+            const iva = parseFloat(document.getElementById('ivaGasto').value);
+            const total = parseFloat(document.getElementById('totalGasto').value);
+            const numero = document.getElementById('numeroGasto').value;
+            
+            const gasto = {
+                id: Date.now(),
+                fecha,
+                categoria,
+                proveedor,
+                concepto,
+                base,
+                porcIVA,
+                iva,
+                total,
+                porcDeducible,
+                numero
+            };
+            
+            gastos.push(gasto);
+            localStorage.setItem('gastos', JSON.stringify(gastos));
+            
+            actualizarListaGastos();
+            actualizarDashboard();
+            limpiarFormularioGasto();
+            
+            alert('✅ Gasto guardado correctamente');
+        }
+        
+        function limpiarFormularioGasto() {
+            document.getElementById('proveedorGasto').value = '';
+            document.getElementById('conceptoGasto').value = '';
+            document.getElementById('baseGasto').value = '';
+            document.getElementById('ivaGasto').value = '';
+            document.getElementById('totalGasto').value = '';
+            document.getElementById('numeroGasto').value = '';
+        }
+        
+        function actualizarListaGastos() {
+            const tbody = document.getElementById('listaGastos');
+            
+            if (gastos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">No hay gastos registrados</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = gastos.map(g => `
+                <tr>
+                    <td>${new Date(g.fecha).toLocaleDateString('es-ES')}</td>
+                    <td><span class="badge badge-otros">${g.categoria}</span></td>
+                    <td>${g.proveedor}</td>
+                    <td>${g.concepto}</td>
+                    <td>${g.base.toFixed(2)} €</td>
+                    <td>${g.iva.toFixed(2)} €</td>
+                    <td><strong>${g.total.toFixed(2)} €</strong></td>
+                    <td>${g.porcDeducible}%</td>
+                    <td>
+                        <button class="btn btn-small btn-warning" onclick="eliminarGasto(${g.id})">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function eliminarGasto(id) {
+            if (confirm('¿Estás seguro de eliminar este gasto?')) {
+                gastos = gastos.filter(g => g.id !== id);
+                localStorage.setItem('gastos', JSON.stringify(gastos));
+                actualizarListaGastos();
+                actualizarDashboard();
+            }
+        }
+        
+        // ==================== DASHBOARD ====================
+        function actualizarDashboard() {
+            const totalIngresos = facturas.reduce((sum, f) => sum + f.base, 0);
+            const totalGastos = gastos.reduce((sum, g) => sum + (g.base * g.porcDeducible / 100), 0);
+            const beneficio = totalIngresos - totalGastos;
+            
+            const ivaRepercutido = facturas.reduce((sum, f) => sum + f.iva, 0);
+            const ivaSoportado = gastos.reduce((sum, g) => sum + (g.iva * g.porcDeducible / 100), 0);
+            const saldoIva = ivaRepercutido - ivaSoportado;
+            
+            const retenciones = facturas.reduce((sum, f) => sum + f.retencion, 0);
+            
+            document.getElementById('dashIngresos').textContent = totalIngresos.toFixed(2) + ' €';
+            document.getElementById('dashGastos').textContent = totalGastos.toFixed(2) + ' €';
+            document.getElementById('dashBeneficio').textContent = beneficio.toFixed(2) + ' €';
+            document.getElementById('dashIva').textContent = saldoIva.toFixed(2) + ' €';
+            document.getElementById('dashRetenciones').textContent = retenciones.toFixed(2) + ' €';
+            
+            // Por fuente
+            const amazon = facturas.filter(f => f.tipo === 'amazon').reduce((sum, f) => sum + f.base, 0);
+            const upwork = facturas.filter(f => f.tipo === 'upwork').reduce((sum, f) => sum + f.base, 0);
+            const stripe = facturas.filter(f => f.tipo === 'stripe').reduce((sum, f) => sum + f.base, 0);
+            
+            document.getElementById('dashAmazon').textContent = amazon.toFixed(2) + ' €';
+            document.getElementById('dashUpwork').textContent = upwork.toFixed(2) + ' €';
+            document.getElementById('dashStripe').textContent = stripe.toFixed(2) + ' €';
+        }
+        
+        // ==================== MODELO 303 ====================
+        function calcular303() {
+            const trimestre = document.getElementById('trimestre303').value;
+            const [trim, anio] = trimestre.split('-');
+            
+            // Filtrar facturas del trimestre
+            const facturasTrim = facturas.filter(f => {
+                const fecha = new Date(f.fecha);
+                const anioF = fecha.getFullYear();
+                const mes = fecha.getMonth() + 1;
+                const trimF = Math.ceil(mes / 3);
+                return anioF == anio && trimF == trim;
+            });
+            
+            const gastosTrim = gastos.filter(g => {
+                const fecha = new Date(g.fecha);
+                const anioG = fecha.getFullYear();
+                const mes = fecha.getMonth() + 1;
+                const trimG = Math.ceil(mes / 3);
+                return anioG == anio && trimG == trim;
+            });
+            
+            // IVA Repercutido
+            const base21 = facturasTrim.filter(f => f.porcIVA === 21).reduce((sum, f) => sum + f.base, 0);
+            const iva21 = facturasTrim.filter(f => f.porcIVA === 21).reduce((sum, f) => sum + f.iva, 0);
+            const exentas = facturasTrim.filter(f => f.porcIVA === 0).reduce((sum, f) => sum + f.base, 0);
+            const totalRep = iva21;
+            
+            // IVA Soportado
+            const baseGastos = gastosTrim.reduce((sum, g) => sum + (g.base * g.porcDeducible / 100), 0);
+            const ivaSop = gastosTrim.reduce((sum, g) => sum + (g.iva * g.porcDeducible / 100), 0);
+            
+            // Resultado
+            const resultado = totalRep - ivaSop;
+            
+            document.getElementById('m303_base21').textContent = base21.toFixed(2) + ' €';
+            document.getElementById('m303_iva21').textContent = iva21.toFixed(2) + ' €';
+            document.getElementById('m303_exentas').textContent = exentas.toFixed(2) + ' €';
+            document.getElementById('m303_totalRep').textContent = totalRep.toFixed(2) + ' €';
+            document.getElementById('m303_baseGastos').textContent = baseGastos.toFixed(2) + ' €';
+            document.getElementById('m303_ivaSop').textContent = ivaSop.toFixed(2) + ' €';
+            document.getElementById('m303_resultado').textContent = Math.abs(resultado).toFixed(2) + ' €';
+            
+            const textoResultado = document.getElementById('m303_textoResultado');
+            if (resultado > 0) {
+                textoResultado.textContent = 'A INGRESAR:';
+                document.getElementById('m303_resultado').style.color = '#C67C4E';
+            } else if (resultado < 0) {
+                textoResultado.textContent = 'A DEVOLVER:';
+                document.getElementById('m303_resultado').style.color = '#2C5F2D';
+            } else {
+                textoResultado.textContent = 'SIN CANTIDAD A INGRESAR/DEVOLVER:';
+                document.getElementById('m303_resultado').style.color = '#606C38';
+            }
+        }
+        
+        // ==================== MODELO 130 ====================
+        function calcular130() {
+            const trimestre = document.getElementById('trimestre130').value;
+            const [trim, anio] = trimestre.split('-');
+            
+            // Filtrar facturas del trimestre
+            const facturasTrim = facturas.filter(f => {
+                const fecha = new Date(f.fecha);
+                const anioF = fecha.getFullYear();
+                const mes = fecha.getMonth() + 1;
+                const trimF = Math.ceil(mes / 3);
+                return anioF == anio && trimF == trim;
+            });
+            
+            const ingresosConRet = facturasTrim.filter(f => f.retencion > 0).reduce((sum, f) => sum + f.base, 0);
+            const ingresosSinRet = facturasTrim.filter(f => f.retencion === 0).reduce((sum, f) => sum + f.base, 0);
+            const totalIng = ingresosConRet + ingresosSinRet;
+            
+            const porcentajeConRet = totalIng > 0 ? (ingresosConRet / totalIng * 100) : 0;
+            
+            document.getElementById('m130_conRet').textContent = ingresosConRet.toFixed(2) + ' €';
+            document.getElementById('m130_sinRet').textContent = ingresosSinRet.toFixed(2) + ' €';
+            document.getElementById('m130_totalIng').textContent = totalIng.toFixed(2) + ' €';
+            document.getElementById('m130_porcentaje').textContent = porcentajeConRet.toFixed(1) + '%';
+            
+            const obligacionBox = document.getElementById('m130_obligacionBox');
+            const calculoBox = document.getElementById('m130_calculoBox');
+            
+            if (porcentajeConRet >= 70) {
+                obligacionBox.innerHTML = `
+                    <div style="padding: 20px; background: rgba(44, 95, 45, 0.1); border-radius: 10px; border: 2px solid #2C5F2D;">
+                        <h3 style="color: #2C5F2D; margin-bottom: 10px;">✅ NO DEBES PRESENTAR EL MODELO 130</h3>
+                        <p style="color: #5D4E37;">Más del 70% de tus ingresos tienen retención (${porcentajeConRet.toFixed(1)}%). Estás exento de presentar este modelo.</p>
+                    </div>
+                `;
+                calculoBox.style.display = 'none';
+            } else {
+                obligacionBox.innerHTML = `
+                    <div style="padding: 20px; background: rgba(198, 124, 78, 0.1); border-radius: 10px; border: 2px solid #C67C4E;">
+                        <h3 style="color: #C67C4E; margin-bottom: 10px;">⚠️ SÍ DEBES PRESENTAR EL MODELO 130</h3>
+                        <p style="color: #5D4E37;">Solo el ${porcentajeConRet.toFixed(1)}% de tus ingresos tienen retención (menos del 70%). Debes presentar el modelo 130.</p>
+                    </div>
+                `;
+                calculoBox.style.display = 'block';
+                
+                // Calcular pago fraccionado
+                const gastosTrim = gastos.filter(g => {
+                    const fecha = new Date(g.fecha);
+                    const anioG = fecha.getFullYear();
+                    const mes = fecha.getMonth() + 1;
+                    const trimG = Math.ceil(mes / 3);
+                    return anioG == anio && trimG == trim;
+                });
+                
+                const gastosDeducibles = gastosTrim.reduce((sum, g) => sum + (g.base * g.porcDeducible / 100), 0);
+                const rendNeto = totalIng - gastosDeducibles;
+                const pago20 = rendNeto * 0.20;
+                const retenciones = facturasTrim.reduce((sum, f) => sum + f.retencion, 0);
+                const resultado = Math.max(0, pago20 - retenciones);
+                
+                document.getElementById('m130_ingTrim').textContent = totalIng.toFixed(2) + ' €';
+                document.getElementById('m130_gastosTrim').textContent = gastosDeducibles.toFixed(2) + ' €';
+                document.getElementById('m130_rendNeto').textContent = rendNeto.toFixed(2) + ' €';
+                document.getElementById('m130_pago20').textContent = pago20.toFixed(2) + ' €';
+                document.getElementById('m130_retenciones').textContent = retenciones.toFixed(2) + ' €';
+                document.getElementById('m130_pagosAnt').textContent = '0,00 €';
+                document.getElementById('m130_resultado').textContent = resultado.toFixed(2) + ' €';
+            }
+        }
+        
+        // ==================== RESUMEN ANUAL ====================
+        function actualizarResumen() {
+            const amazon = facturas.filter(f => f.tipo === 'amazon').reduce((sum, f) => sum + f.base, 0);
+            const upwork = facturas.filter(f => f.tipo === 'upwork').reduce((sum, f) => sum + f.base, 0);
+            const stripe = facturas.filter(f => f.tipo === 'stripe').reduce((sum, f) => sum + f.base, 0);
+            const otros = facturas.filter(f => f.tipo === 'otros').reduce((sum, f) => sum + f.base, 0);
+            const totalIng = amazon + upwork + stripe + otros;
+            
+            document.getElementById('res_amazon').textContent = amazon.toFixed(2) + ' €';
+            document.getElementById('res_upwork').textContent = upwork.toFixed(2) + ' €';
+            document.getElementById('res_stripe').textContent = stripe.toFixed(2) + ' €';
+            document.getElementById('res_otros').textContent = otros.toFixed(2) + ' €';
+            document.getElementById('res_totalIng').textContent = totalIng.toFixed(2) + ' €';
+            
+            // Gastos por categoría
+            const cuota = gastos.filter(g => g.categoria === 'cuota_ss').reduce((sum, g) => sum + g.base, 0);
+            const comisiones = gastos.filter(g => g.categoria.includes('comisiones')).reduce((sum, g) => sum + g.base, 0);
+            const software = gastos.filter(g => g.categoria === 'software').reduce((sum, g) => sum + g.base, 0);
+            const publicidad = gastos.filter(g => g.categoria === 'publicidad').reduce((sum, g) => sum + g.base, 0);
+            const otrosGastos = gastos.filter(g => !['cuota_ss', 'software', 'publicidad'].includes(g.categoria) && !g.categoria.includes('comisiones')).reduce((sum, g) => sum + g.base, 0);
+            const totalGastos = gastos.reduce((sum, g) => sum + (g.base * g.porcDeducible / 100), 0);
+            
+            document.getElementById('res_cuota').textContent = cuota.toFixed(2) + ' €';
+            document.getElementById('res_comisiones').textContent = comisiones.toFixed(2) + ' €';
+            document.getElementById('res_software').textContent = software.toFixed(2) + ' €';
+            document.getElementById('res_publicidad').textContent = publicidad.toFixed(2) + ' €';
+            document.getElementById('res_otrosGastos').textContent = otrosGastos.toFixed(2) + ' €';
+            document.getElementById('res_totalGastos').textContent = totalGastos.toFixed(2) + ' €';
+            
+            // Resumen fiscal
+            const beneficio = totalIng - totalGastos;
+            const ivaRep = facturas.reduce((sum, f) => sum + f.iva, 0);
+            const ivaSop = gastos.reduce((sum, g) => sum + (g.iva * g.porcDeducible / 100), 0);
+            const retenciones = facturas.reduce((sum, f) => sum + f.retencion, 0);
+            
+            document.getElementById('res_beneficio').textContent = beneficio.toFixed(2) + ' €';
+            document.getElementById('res_ivaRep').textContent = ivaRep.toFixed(2) + ' €';
+            document.getElementById('res_ivaSop').textContent = ivaSop.toFixed(2) + ' €';
+            document.getElementById('res_retenciones').textContent = retenciones.toFixed(2) + ' €';
+            document.getElementById('res_numFacturas').textContent = facturas.length;
+            document.getElementById('res_numGastos').textContent = gastos.length;
+        }
+        
+        // ==================== UTILIDADES ====================
+        async function obtenerTipoCambioUtil() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳';
+            
+            setTimeout(() => {
+                document.getElementById('util_cambio').value = 1.0850;
+                btn.disabled = false;
+                btn.textContent = '🔄 Obtener';
+            }, 1000);
+        }
+        
+        function convertirUSDUtil() {
+            const usd = parseFloat(document.getElementById('util_usd').value) || 0;
+            const cambio = parseFloat(document.getElementById('util_cambio').value) || 0;
+            
+            if (usd > 0 && cambio > 0) {
+                const eur = usd / cambio;
+                document.getElementById('util_resultado').textContent = eur.toFixed(2) + ' €';
+            } else {
+                alert('Por favor, completa ambos campos');
+            }
+        }
+        
+        function calcularRetencionInversa() {
+            const recibido = parseFloat(document.getElementById('calc_recibido').value);
+            const porcRet = parseFloat(document.getElementById('calc_retencion').value);
+            
+            if (!recibido || recibido <= 0) {
+                alert('Por favor, introduce la cantidad recibida');
+                return;
+            }
+            
+            const base = recibido / (1 - porcRet / 100);
+            const retencion = base - recibido;
+            
+            document.getElementById('calc_base').textContent = base.toFixed(2) + ' €';
+            document.getElementById('calc_ret').textContent = retencion.toFixed(2) + ' €';
+            document.getElementById('calc_total').textContent = recibido.toFixed(2) + ' €';
+            document.getElementById('calc_resultado').style.display = 'block';
+        }
+        
+        function exportarDatos() {
+            const datos = {
+                facturas,
+                gastos,
+                exportado: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `datos-fiscal-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function importarDatos(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const datos = JSON.parse(e.target.result);
+                    
+                    if (confirm('¿Estás seguro? Esto reemplazará todos tus datos actuales.')) {
+                        facturas = datos.facturas || [];
+                        gastos = datos.gastos || [];
+                        
+                        localStorage.setItem('facturas', JSON.stringify(facturas));
+                        localStorage.setItem('gastos', JSON.stringify(gastos));
+                        
+                        actualizarListaFacturas();
+                        actualizarListaGastos();
+                        actualizarDashboard();
+                        
+                        alert('✅ Datos importados correctamente');
+                    }
+                } catch (error) {
+                    alert('❌ Error al importar datos. Verifica que el archivo sea válido.');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function limpiarTodosDatos() {
+            if (confirm('⚠️ ATENCIÓN: Esto eliminará TODAS tus facturas y gastos. ¿Estás completamente seguro?')) {
+                if (confirm('Esta acción NO se puede deshacer. ¿Continuar?')) {
+                    facturas = [];
+                    gastos = [];
+                    localStorage.removeItem('facturas');
+                    localStorage.removeItem('gastos');
+                    
+                    actualizarListaFacturas();
+                    actualizarListaGastos();
+                    actualizarDashboard();
+                    calcular303();
+                    calcular130();
+                    actualizarResumen();
+                    
+                    alert('✅ Todos los datos han sido eliminados');
+                }
+            }
+        }
+        
+        // ==================== VISTA PREVIA FACTURA ====================
+        function previsualizarFactura() {
+            const tipo = document.getElementById('tipoFactura').value;
+            const fecha = document.getElementById('fechaFactura').value;
+            const numero = document.getElementById('numFactura').value;
+            const base = parseFloat(document.getElementById('baseImp').value);
+            const descripcion = document.getElementById('descripcionServ').value;
+            
+            if (!fecha || !numero || !base || !descripcion) {
+                alert('Por favor, completa todos los campos obligatorios antes de previsualizar');
+                return;
+            }
+            
+            let cliente = '';
+            let nifCliente = '';
+            
+            if (tipo === 'amazon') {
+                cliente = 'Amazon Media EU S.à.r.l. Sucursal España';
+                nifCliente = 'W-0184081-H';
+            } else {
+                const nombreCliente = document.getElementById('nombreCliente');
+                if (nombreCliente) {
+                    cliente = nombreCliente.value || 'Cliente sin especificar';
+                }
+                const nifInput = document.getElementById('nifCliente');
+                if (nifInput) {
+                    nifCliente = nifInput.value;
+                }
+            }
+            
+            const iva = parseFloat(document.getElementById('importeIVA').value);
+            const retencion = parseFloat(document.getElementById('importeRetencion').value);
+            const total = parseFloat(document.getElementById('totalFactura').value);
+            const porcIVA = parseFloat(document.getElementById('porcIVA').value);
+            const porcRet = parseFloat(document.getElementById('porcRetencion').value);
+            
+            let observaciones = '';
+            if (tipo === 'amazon') {
+                observaciones = 'Operación exenta de IVA - Art. 20.Uno.26º LIVA (Libros)';
+            } else if (tipo === 'upwork') {
+                observaciones = 'Operación exenta de IVA - Inversión del sujeto pasivo. Prestación de servicios Art. 69 y 70 Ley 37/1992 LIVA.';
+            }
+            
+            const preview = `
+                <div class="factura-preview">
+                    <div class="factura-header">
+                        <div>
+                            <div class="factura-title">FACTURA</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div><strong>Nº:</strong> ${numero}</div>
+                            <div><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString('es-ES')}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="datos-section">
+                            <h3>DATOS DEL EMISOR</h3>
+                            <p><strong>${MIS_DATOS.nombre}</strong></p>
+                            <p>NIF: ${MIS_DATOS.nif}</p>
+                            <p>${MIS_DATOS.direccion}</p>
+                            <p>${MIS_DATOS.actividad}</p>
+                        </div>
+                        
+                        <div class="datos-section">
+                            <h3>DATOS DEL CLIENTE</h3>
+                            <p><strong>${cliente}</strong></p>
+                            ${nifCliente ? `<p>NIF: ${nifCliente}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    <table class="tabla-factura">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th style="text-align: right; width: 120px;">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${descripcion}</td>
+                                <td style="text-align: right;">${base.toFixed(2)} €</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="totales-factura">
+                        <div class="linea-total">
+                            <span>Base Imponible:</span>
+                            <strong>${base.toFixed(2)} €</strong>
+                        </div>
+                        ${iva > 0 ? `
+                        <div class="linea-total">
+                            <span>IVA (${porcIVA}%):</span>
+                            <strong>${iva.toFixed(2)} €</strong>
+                        </div>
+                        ` : ''}
+                        ${retencion > 0 ? `
+                        <div class="linea-total">
+                            <span>Retención IRPF (${porcRet}%):</span>
+                            <strong>-${retencion.toFixed(2)} €</strong>
+                        </div>
+                        ` : ''}
+                        <div class="linea-total final">
+                            <span>TOTAL:</span>
+                            <strong>${total.toFixed(2)} €</strong>
+                        </div>
+                    </div>
+                    
+                    ${observaciones ? `
+                    <div style="margin-top: 30px; padding: 15px; background: rgba(151, 188, 98, 0.2); border-radius: 8px; font-size: 0.9em;">
+                        <strong>Observaciones:</strong><br>
+                        ${observaciones}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="acciones" style="margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="imprimirFactura()">🖨️ Imprimir</button>
+                        <button class="btn btn-warning" onclick="cerrarPreview()">❌ Cerrar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('vistaPrevia').innerHTML = preview;
+            document.getElementById('vistaPrevia').style.display = 'block';
+            document.getElementById('vistaPrevia').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function cerrarPreview() {
+            document.getElementById('vistaPrevia').style.display = 'none';
+            document.getElementById('vistaPrevia').innerHTML = '';
+        }
+        
+        function imprimirFactura() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
