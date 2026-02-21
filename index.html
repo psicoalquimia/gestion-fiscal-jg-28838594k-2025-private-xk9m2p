@@ -38,6 +38,8 @@ th,td{padding:.75rem 1rem;border-bottom:1px solid var(--border);text-align:left;
 .tag-green{background:rgba(16,185,129,0.2);color:var(--green);}
 .tag-yellow{background:rgba(245,158,11,0.2);color:var(--yellow);}
 .edit-mode-banner{background:rgba(245,158,11,0.1);border:1px solid var(--yellow);color:var(--yellow);padding:.7rem 1rem;border-radius:6px;margin-bottom:1rem;display:none;align-items:center;justify-content:space-between;}
+.summary-row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px dashed var(--border);}
+.summary-row:last-child{border:none;font-weight:700;font-size:1.1rem;margin-top:.5rem;color:var(--accent2);}
 </style>
 </head>
 <body>
@@ -45,15 +47,26 @@ th,td{padding:.75rem 1rem;border-bottom:1px solid var(--border);text-align:left;
 <div class="setup-box">
 <h2>⚙️ Configuración inicial</h2>
 <div class="form-grid">
-<div class="full"><label>Nombre Completo</label><input id="cfg-nombre" type="text"></div>
-<div><label>NIF / NIE</label><input id="cfg-nif" type="text"></div>
+<div class="full">
+<label>Nombre Completo</label>
+<input id="cfg-nombre" type="text">
+</div>
+<div>
+<label>NIF / NIE</label>
+<input id="cfg-nif" type="text">
+</div>
 </div>
 <button class="btn btn-primary full" onclick="guardarConfiguracion()">Comenzar</button>
 </div>
 </div>
 <header>
-<div><h1>📊 Gestión Fiscal</h1><div id="headerInfo"></div></div>
+<div>
+<h1>📊 Gestión Fiscal</h1>
+<div id="headerInfo"></div>
+</div>
+<div class="header-actions">
 <button class="btn btn-ghost" onclick="exportarLibroRegistro()">📥 Libro Registro</button>
+</div>
 </header>
 <nav>
 <button class="active" onclick="cambiarTab(event,'dashboard')">🏠 Resumen</button>
@@ -67,43 +80,158 @@ th,td{padding:.75rem 1rem;border-bottom:1px solid var(--border);text-align:left;
 <main>
 <div id="tab-dashboard" class="tab-content active">
 <div class="dash-grid" id="dash-grid"></div>
-<div class="card"><h3>📅 Calendario Fiscal</h3><div class="venc-grid" id="venc-grid"></div></div>
+<div class="card">
+<h3>📅 Calendario Fiscal</h3>
+<div class="venc-grid" id="venc-grid"></div>
+</div>
 </div>
 <div id="tab-facturas" class="tab-content">
 <div class="card">
-<div id="fac-edit-banner" class="edit-mode-banner"><span>✏️ Editando factura</span><button onclick="limpiarFormFactura()">Cancelar</button></div>
-<h3>➕ Nueva Factura</h3>
+<div id="fac-edit-banner" class="edit-mode-banner">
+<span>✏️ Editando factura</span>
+<button class="btn btn-ghost" onclick="limpiarFormFactura()">Cancelar</button>
+</div>
+<h3>🧾 Nueva Factura</h3>
 <div class="form-grid">
-<div><label>Fecha</label><input id="fac-fecha" type="date"></div>
-<div><label>Nº</label><input id="fac-num" type="text"></div>
-<div class="full"><label>Cliente</label><input id="fac-cliente" type="text"></div>
-<div><label>Tipo</label><select id="fac-tipo" onchange="autoIva()"><option value="sesion">Psicología (Exenta)</option><option value="libro">Libro Papel (4%)</option><option value="otros">Otros (21%)</option></select></div>
-<div><label>Base</label><input id="fac-base" type="number" step="0.01" oninput="recalc()"></div>
-<div><label>IVA %</label><input id="fac-iva-pct" type="number" value="0" oninput="recalc()"></div>
-<div><label>IRPF %</label><select id="fac-irpf-pct" onchange="recalc()"><option value="0">0%</option><option value="7">7%</option><option value="15">15%</option></select></div>
+<div>
+<label>Fecha</label>
+<input id="fac-fecha" type="date">
+</div>
+<div>
+<label>Nº Factura</label>
+<input id="fac-num" type="text">
+</div>
+<div class="full">
+<label>Cliente</label>
+<input id="fac-cliente" type="text">
+</div>
+<div>
+<label>Tipo de Actividad</label>
+<select id="fac-tipo" onchange="autoIva()">
+<option value="sesion">Psicología (Exenta)</option>
+<option value="libro">Libro Papel (4%)</option>
+<option value="otros">Otros (21%)</option>
+</select>
+</div>
+<div>
+<label>Base Imponible (€)</label>
+<input id="fac-base" type="number" step="0.01" oninput="recalc()">
+</div>
+<div>
+<label>IVA (%)</label>
+<input id="fac-iva-pct" type="number" value="0" oninput="recalc()">
+</div>
+<div>
+<label>IRPF (%)</label>
+<select id="fac-irpf-pct" onchange="recalc()">
+<option value="0">0%</option>
+<option value="7">7% (Nuevos autónomos)</option>
+<option value="15">15% (General)</option>
+</select>
+</div>
 </div>
 <input type="hidden" id="fac-id">
-<button class="btn btn-primary" onclick="guardarFactura()">Guardar</button>
+<button class="btn btn-primary" id="btn-save-fac" onclick="guardarFactura()">Guardar Factura</button>
 </div>
-<div class="card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Nº</th><th>Cliente</th><th>Base</th><th>IVA</th><th>Total</th><th></th></tr></thead><tbody id="lista-facturas"></tbody></table></div></div>
+<div class="card">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Nº</th>
+<th>Cliente</th>
+<th>Base</th>
+<th>IVA</th>
+<th>Total</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="lista-facturas"></tbody>
+</table>
+</div>
+</div>
 </div>
 <div id="tab-gastos" class="tab-content">
 <div class="card">
-<h3>➕ Nuevo Gasto</h3>
+<div id="gas-edit-banner" class="edit-mode-banner">
+<span>✏️ Editando gasto</span>
+<button class="btn btn-ghost" onclick="limpiarFormGasto()">Cancelar</button>
+</div>
+<h3>💸 Nuevo Gasto</h3>
 <div class="form-grid">
-<div><label>Fecha</label><input id="gas-fecha" type="date"></div>
-<div class="full"><label>Concepto</label><input id="gas-prov" type="text"></div>
-<div><label>Total</label><input id="gas-total" type="number" step="0.01" oninput="recalcG()"></div>
-<div><label>IVA %</label><select id="gas-iva-pct" onchange="recalcG()"><option value="21">21%</option><option value="10">10%</option><option value="4">4%</option><option value="0">0%</option></select></div>
+<div>
+<label>Fecha</label>
+<input id="gas-fecha" type="date">
 </div>
-<button class="btn btn-primary" onclick="guardarGasto()">Guardar</button>
+<div class="full">
+<label>Concepto / Proveedor</label>
+<input id="gas-prov" type="text">
 </div>
-<div class="card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Base</th><th>IVA</th><th>Total</th><th></th></tr></thead><tbody id="lista-gastos"></tbody></table></div></div>
+<div>
+<label>Total Gasto (€)</label>
+<input id="gas-total" type="number" step="0.01" oninput="recalcG()">
 </div>
-<div id="tab-m303" class="tab-content"><div class="card"><h3>Modelo 303 (IVA)</h3><div id="res-303"></div></div></div>
-<div id="tab-m130" class="tab-content"><div class="card"><h3>Modelo 130 (IRPF)</h3><div id="res-130"></div></div></div>
-<div id="tab-anuales" class="tab-content"><div class="card"><h3>Anuales (390/190)</h3><div id="res-anual"></div></div></div>
-<div id="tab-util" class="tab-content"><div class="card"><h3>🔧 Ajustes</h3><button class="btn btn-ghost" onclick="reparar()">Reparar IVA</button><button class="btn btn-danger" onclick="limpiar()">Borrar Todo</button></div></div>
+<div>
+<label>IVA (%)</label>
+<select id="gas-iva-pct" onchange="recalcG()">
+<option value="21">21%</option>
+<option value="10">10%</option>
+<option value="4">4%</option>
+<option value="0">0%</option>
+</select>
+</div>
+</div>
+<input type="hidden" id="gas-id">
+<button class="btn btn-primary" id="btn-save-gas" onclick="guardarGasto()">Guardar Gasto</button>
+</div>
+<div class="card">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Concepto</th>
+<th>Base</th>
+<th>IVA</th>
+<th>Total</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="lista-gastos"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tab-m303" class="tab-content">
+<div class="card">
+<h3>📋 Modelo 303 (IVA Trimestral)</h3>
+<p style="margin-bottom:1rem;color:var(--text2)">Resumen de IVA devengado y deducible del trimestre actual.</p>
+<div id="res-303"></div>
+</div>
+</div>
+<div id="tab-m130" class="tab-content">
+<div class="card">
+<h3>📋 Modelo 130 (Pago Fraccionado IRPF)</h3>
+<p style="margin-bottom:1rem;color:var(--text2)">Pago a cuenta del 20% sobre el rendimiento neto (Ingresos - Gastos).</p>
+<div id="res-130"></div>
+</div>
+</div>
+<div id="tab-anuales" class="tab-content">
+<div class="card">
+<h3>📅 Resumen Anual (Modelos 390 / 190)</h3>
+<div id="res-anual"></div>
+</div>
+</div>
+<div id="tab-util" class="tab-content">
+<div class="card">
+<h3>🔧 Ajustes y Herramientas</h3>
+<div style="display:flex;gap:1rem;flex-wrap:wrap">
+<button class="btn btn-ghost" onclick="reparar()">Reparar Datos</button>
+<button class="btn btn-danger" onclick="limpiar()">Borrar Todos los Datos</button>
+</div>
+</div>
+</div>
 </main>
 <script>
 let facturas=[],gastos=[],config={},pres={};
@@ -126,11 +254,88 @@ const h=document.getElementById('headerInfo');
 h.innerText=config.nombre?`${config.nombre} | ${config.nif}`:'Pendiente';
 const ing=facturas.reduce((s,f)=>s+f.base,0);
 const gas=gastos.reduce((s,g)=>s+g.base,0);
-document.getElementById('dash-grid').innerHTML=`<div class="dash-card"><label>Ingresos</label><div>${ing.toFixed(2)}€</div></div><div class="dash-card"><label>Gastos</label><div>${gas.toFixed(2)}€</div></div>`;
+document.getElementById('dash-grid').innerHTML=`
+<div class="dash-card"><label>Ingresos Brutos</label><div>${ing.toFixed(2)}€</div></div>
+<div class="dash-card"><label>Gastos Totales</label><div>${gas.toFixed(2)}€</div></div>
+<div class="dash-card"><label>Rendimiento</label><div>${(ing-gas).toFixed(2)}€</div></div>
+`;
 const vs=['4T 2025','1T 2026','2T 2026','3T 2026'];
-document.getElementById('venc-grid').innerHTML=vs.map(v=>`<div class="venc-card ${pres[v]?'presentado':''}" onclick="toggleP('${v}')"><strong>${v}</strong><br><span class="tag ${pres[v]?'tag-green':'tag-yellow'}">${pres[v]?'SÍ':'NO'}</span></div>`).join('');
-document.getElementById('lista-facturas').innerHTML=facturas.map(f=>`<tr><td>${f.fecha}</td><td>${f.num}</td><td>${f.cliente}</td><td>${f.base.toFixed(2)}</td><td>${f.iva.toFixed(2)}</td><td>${f.total.toFixed(2)}</td><td><button onclick="editF(${f.id})">✏️</button></td></tr>`).join('');
-document.getElementById('lista-gastos').innerHTML=gastos.map(g=>`<tr><td>${g.fecha}</td><td>${g.prov}</td><td>${g.base.toFixed(2)}</td><td>${g.iva.toFixed(2)}</td><td>${g.total.toFixed(2)}</td></tr>`).join('');
+document.getElementById('venc-grid').innerHTML=vs.map(v=>`
+<div class="venc-card ${pres[v]?'presentado':''}" onclick="toggleP('${v}')">
+<strong>${v}</strong><br>
+<span class="tag ${pres[v]?'tag-green':'tag-yellow'}">${pres[v]?'PRESENTADO':'PENDIENTE'}</span>
+</div>`).join('');
+document.getElementById('lista-facturas').innerHTML=facturas.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(f=>`
+<tr>
+<td>${f.fecha}</td>
+<td>${f.num}</td>
+<td>${f.cliente}</td>
+<td>${f.base.toFixed(2)}€</td>
+<td>${f.iva.toFixed(2)}€</td>
+<td>${f.total.toFixed(2)}€</td>
+<td>
+<button class="btn btn-ghost" onclick="editF(${f.id})">✏️</button>
+<button class="btn btn-ghost" style="color:var(--red)" onclick="deleteF(${f.id})">🗑️</button>
+</td>
+</tr>`).join('');
+document.getElementById('lista-gastos').innerHTML=gastos.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(g=>`
+<tr>
+<td>${g.fecha}</td>
+<td>${g.prov}</td>
+<td>${g.base.toFixed(2)}€</td>
+<td>${g.iva.toFixed(2)}€</td>
+<td>${g.total.toFixed(2)}€</td>
+<td>
+<button class="btn btn-ghost" onclick="editG(${g.id})">✏️</button>
+<button class="btn btn-ghost" style="color:var(--red)" onclick="deleteG(${g.id})">🗑️</button>
+</td>
+</tr>`).join('');
+renderModelos();
+}
+function renderModelos(){
+const trim=getTrimActual();
+const fTrim=facturas.filter(f=>getTrim(f.fecha)===trim);
+const gTrim=gastos.filter(g=>getTrim(g.fecha)===trim);
+const ivaDev=fTrim.reduce((s,f)=>s+f.iva,0);
+const ivaDed=gTrim.reduce((s,g)=>s+g.iva,0);
+document.getElementById('res-303').innerHTML=`
+<div class="summary-row"><span>IVA Devengado (Ventas):</span><span>${ivaDev.toFixed(2)}€</span></div>
+<div class="summary-row"><span>IVA Deducible (Compras):</span><span>${ivaDed.toFixed(2)}€</span></div>
+<div class="summary-row"><span>Resultado:</span><span>${(ivaDev-ivaDed).toFixed(2)}€</span></div>
+`;
+const ingTrim=fTrim.reduce((s,f)=>s+f.base,0);
+const gasTrim=gTrim.reduce((s,g)=>s+g.base,0);
+const rdoTrim=ingTrim-gasTrim;
+document.getElementById('res-130').innerHTML=`
+<div class="summary-row"><span>Ingresos:</span><span>${ingTrim.toFixed(2)}€</span></div>
+<div class="summary-row"><span>Gastos:</span><span>${gasTrim.toFixed(2)}€</span></div>
+<div class="summary-row"><span>Rendimiento:</span><span>${rdoTrim.toFixed(2)}€</span></div>
+<div class="summary-row"><span>Pago a cuenta (20%):</span><span>${(Math.max(0,rdoTrim)*0.2).toFixed(2)}€</span></div>
+`;
+const irpfAnual=facturas.reduce((s,f)=>s+(f.base*(f.irpfPct||0)/100),0);
+const ivaAnualDev=facturas.reduce((s,f)=>s+f.iva,0);
+const ivaAnualDed=gastos.reduce((s,g)=>s+g.iva,0);
+document.getElementById('res-anual').innerHTML=`
+<div class="card" style="margin-top:1rem">
+<h4>Modelo 390 (IVA Anual)</h4>
+<div class="summary-row"><span>Base Imponible Total:</span><span>${facturas.reduce((s,f)=>s+f.base,0).toFixed(2)}€</span></div>
+<div class="summary-row"><span>IVA Devengado Total:</span><span>${ivaAnualDev.toFixed(2)}€</span></div>
+<div class="summary-row"><span>IVA Deducible Total:</span><span>${ivaAnualDed.toFixed(2)}€</span></div>
+</div>
+<div class="card">
+<h4>Modelo 190 (Retenciones IRPF)</h4>
+<p style="font-size:.8rem;color:var(--text2);margin-bottom:.5rem">Suma de retenciones practicadas por clientes en facturas.</p>
+<div class="summary-row"><span>Total Retenciones:</span><span>${irpfAnual.toFixed(2)}€</span></div>
+</div>
+`;
+}
+function getTrim(fecha){
+const m=new Date(fecha).getMonth()+1;
+if(m<=3)return '1T';if(m<=6)return '2T';if(m<=9)return '3T';return '4T';
+}
+function getTrimActual(){
+const m=new Date().getMonth()+1;
+if(m<=3)return '1T';if(m<=6)return '2T';if(m<=9)return '3T';return '4T';
 }
 function cambiarTab(e,id){
 document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
@@ -144,26 +349,123 @@ const t=document.getElementById('fac-tipo').value;
 document.getElementById('fac-iva-pct').value=(t==='sesion')?0:(t==='libro'?4:21);
 recalc();
 }
-function recalc(){
-const b=parseFloat(document.getElementById('fac-base').value)||0;
-const p=parseFloat(document.getElementById('fac-iva-pct').value)||0;
-const r=parseFloat(document.getElementById('fac-irpf-pct').value)||0;
-}
+function recalc(){}
 function guardarFactura(){
-const f={id:Date.now(),fecha:document.getElementById('fac-fecha').value,num:document.getElementById('fac-num').value,cliente:document.getElementById('fac-cliente').value,base:parseFloat(document.getElementById('fac-base').value)||0,ivaPct:parseFloat(document.getElementById('fac-iva-pct').value)||0,irpfPct:parseFloat(document.getElementById('fac-irpf-pct').value)||0};
-f.iva=f.base*(f.ivaPct/100);f.total=f.base+f.iva-(f.base*f.irpfPct/100);
-facturas.push(f);save();render();
+const id=document.getElementById('fac-id').value;
+const f={
+id:id?parseInt(id):Date.now(),
+fecha:document.getElementById('fac-fecha').value,
+num:document.getElementById('fac-num').value,
+cliente:document.getElementById('fac-cliente').value,
+base:parseFloat(document.getElementById('fac-base').value)||0,
+ivaPct:parseFloat(document.getElementById('fac-iva-pct').value)||0,
+irpfPct:parseFloat(document.getElementById('fac-irpf-pct').value)||0
+};
+f.iva=f.base*(f.ivaPct/100);
+f.total=f.base+f.iva-(f.base*f.irpfPct/100);
+if(id){
+const idx=facturas.findIndex(x=>x.id===f.id);
+if(idx!==-1)facturas[idx]=f;
+}else{
+facturas.push(f);
 }
+save();
+limpiarFormFactura();
+render();
+}
+function editF(id){
+const f=facturas.find(x=>x.id===id);
+if(!f)return;
+document.getElementById('fac-id').value=f.id;
+document.getElementById('fac-fecha').value=f.fecha;
+document.getElementById('fac-num').value=f.num;
+document.getElementById('fac-cliente').value=f.cliente;
+document.getElementById('fac-base').value=f.base;
+document.getElementById('fac-iva-pct').value=f.ivaPct;
+document.getElementById('fac-irpf-pct').value=f.irpfPct||0;
+document.getElementById('fac-edit-banner').style.display='flex';
+document.getElementById('btn-save-fac').innerText='Actualizar Factura';
+window.scrollTo(0,0);
+}
+function deleteF(id){if(confirm('¿Borrar factura?')){facturas=facturas.filter(x=>x.id!==id);save();render();}}
+function limpiarFormFactura(){
+document.getElementById('fac-id').value='';
+document.getElementById('fac-fecha').value='';
+document.getElementById('fac-num').value='';
+document.getElementById('fac-cliente').value='';
+document.getElementById('fac-base').value='';
+document.getElementById('fac-iva-pct').value='0';
+document.getElementById('fac-irpf-pct').value='0';
+document.getElementById('fac-edit-banner').style.display='none';
+document.getElementById('btn-save-fac').innerText='Guardar Factura';
+}
+function recalcG(){}
 function guardarGasto(){
+const id=document.getElementById('gas-id').value;
 const t=parseFloat(document.getElementById('gas-total').value)||0,p=parseFloat(document.getElementById('gas-iva-pct').value)||0;
 const b=t/(1+p/100);
-gastos.push({id:Date.now(),fecha:document.getElementById('gas-fecha').value,prov:document.getElementById('gas-prov').value,total:t,base:b,iva:t-b});
-save();render();
+const g={
+id:id?parseInt(id):Date.now(),
+fecha:document.getElementById('gas-fecha').value,
+prov:document.getElementById('gas-prov').value,
+total:t,
+base:b,
+iva:t-b,
+ivaPct:p
+};
+if(id){
+const idx=gastos.findIndex(x=>x.id===g.id);
+if(idx!==-1)gastos[idx]=g;
+}else{
+gastos.push(g);
 }
-function guardarConfiguracion(){
-config.nombre=document.getElementById('cfg-nombre').value;
-config.nif=document.getElementById('cfg-nif').value;
-if(config.nombre){save();document.getElementById('setupModal').classList.remove('active');render();}
+save();
+limpiarFormGasto();
+render();
+}
+function editG(id){
+const g=gastos.find(x=>x.id===id);
+if(!g)return;
+document.getElementById('gas-id').value=g.id;
+document.getElementById('gas-fecha').value=g.fecha;
+document.getElementById('gas-prov').value=g.prov;
+document.getElementById('gas-total').value=g.total;
+document.getElementById('gas-iva-pct').value=g.ivaPct||21;
+document.getElementById('gas-edit-banner').style.display='flex';
+document.getElementById('btn-save-gas').innerText='Actualizar Gasto';
+window.scrollTo(0,0);
+}
+function deleteG(id){if(confirm('¿Borrar gasto?')){gastos=gastos.filter(x=>x.id!==id);save();render();}}
+function limpiarFormGasto(){
+document.getElementById('gas-id').value='';
+document.getElementById('gas-fecha').value='';
+document.getElementById('gas-prov').value='';
+document.getElementById('gas-total').value='';
+document.getElementById('gas-edit-banner').style.display='none';
+document.getElementById('btn-save-gas').innerText='Guardar Gasto';
+}
+function reparar(){
+facturas=facturas.map(f=>{
+if(f.iva===undefined || f.iva===null) f.iva=f.base*(f.ivaPct/100);
+if(f.total===undefined || f.total===null) f.total=f.base+f.iva-(f.base*(f.irpfPct||0)/100);
+return f;
+});
+gastos=gastos.map(g=>{
+if(g.base===undefined) g.base=g.total/(1+(g.ivaPct||21)/100);
+if(g.iva===undefined) g.iva=g.total-g.base;
+return g;
+});
+save();render();alert('Datos reparados');
+}
+function limpiar(){if(confirm('¿BORRAR TODO?')){localStorage.clear();location.reload();}}
+function exportarLibroRegistro(){
+let csv="Tipo,Fecha,Numero,Concepto/Cliente,Base,IVA,IRPF,Total\n";
+facturas.forEach(f=>csv+=`Ingreso,${f.fecha},${f.num},${f.cliente},${f.base},${f.iva},${f.base*(f.irpfPct||0)/100},${f.total}\n`);
+gastos.forEach(g=>csv+=`Gasto,${g.fecha},-,${g.prov},${g.base},${g.iva},0,${g.total}\n`);
+const blob=new Blob([csv],{type:'text/csv'});
+const url=window.URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;a.download='libro_registro.csv';a.click();
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
