@@ -1,1450 +1,294 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title>Sistema de Gestión Fiscal — Autónomo</title>
-<style>
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #222535;
-    --border: #2e3250;
-    --accent: #6c63ff;
-    --accent2: #a78bfa;
-    --text: #e8eaf6;
-    --text2: #9ca3af;
-    --green: #10b981;
-    --red: #ef4444;
-    --yellow: #f59e0b;
-    --blue: #3b82f6;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; }
-
-  /* SETUP MODAL */
-  #setupModal {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-    z-index: 9999; align-items: center; justify-content: center;
-  }
-  #setupModal.active { display: flex; }
-  .setup-box {
-    background: var(--surface); border: 1px solid var(--accent);
-    border-radius: 12px; padding: 2rem; max-width: 520px; width: 90%;
-  }
-  .setup-box h2 { color: var(--accent2); margin-bottom: .5rem; }
-  .setup-box p { color: var(--text2); font-size: .9rem; margin-bottom: 1.5rem; }
-  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
-  .setup-grid .full { grid-column: 1/-1; }
-
-  /* HEADER */
-  header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: .8rem 1.5rem; display: flex; align-items: center;
-    justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  }
-  header h1 { font-size: 1.1rem; color: var(--accent2); }
-  .header-info { font-size: .8rem; color: var(--text2); }
-  .header-actions { display: flex; gap: .5rem; }
-
-  /* NAV TABS */
-  nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; gap: .2rem; overflow-x: auto; }
-  nav button {
-    background: none; border: none; color: var(--text2); padding: .75rem 1.1rem;
-    cursor: pointer; border-bottom: 2px solid transparent; font-size: .9rem;
-    white-space: nowrap; transition: all .2s;
-  }
-  nav button:hover { color: var(--text); }
-  nav button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
-
-  /* MAIN */
-  main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  /* CARDS */
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem;
-  }
-  .card h3 { color: var(--accent2); margin-bottom: 1rem; font-size: 1rem; }
-  .card h4 { color: var(--text); margin: .8rem 0 .4rem; font-size: .9rem; }
-
-  /* DASHBOARD GRID */
-  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
-  .dash-card {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 1.1rem; text-align: center;
-  }
-  .dash-card .label { font-size: .78rem; color: var(--text2); margin-bottom: .4rem; }
-  .dash-card .value { font-size: 1.5rem; font-weight: 700; }
-  .dash-card .sub { font-size: .75rem; color: var(--text2); margin-top: .3rem; }
-  .green { color: var(--green); }
-  .red { color: var(--red); }
-  .yellow { color: var(--yellow); }
-  .blue { color: var(--blue); }
-
-  /* VENCIMIENTOS */
-  .venc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
-  .venc-card {
-    border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
-    background: var(--surface2);
-  }
-  .venc-card.pasado { border-color: var(--red); opacity: .7; }
-  .venc-card.proximo { border-color: var(--yellow); }
-  .venc-card.futuro { border-color: var(--border); }
-  .venc-card.presentado { border-color: var(--green); }
-  .venc-card .venc-title { font-weight: 600; margin-bottom: .3rem; }
-  .venc-card .venc-fecha { font-size: .85rem; color: var(--text2); }
-  .venc-card .venc-estado { font-size: .78rem; margin-top: .4rem; padding: .2rem .5rem; border-radius: 4px; display: inline-block; }
-  .badge-presentado { background: rgba(16,185,129,.15); color: var(--green); }
-  .badge-pendiente { background: rgba(245,158,11,.15); color: var(--yellow); }
-  .badge-pasado { background: rgba(239,68,68,.15); color: var(--red); }
-  .badge-futuro { background: rgba(107,99,255,.15); color: var(--accent2); }
-
-  /* FORMS */
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .8rem; margin-bottom: 1rem; }
-  .form-grid .full { grid-column: 1/-1; }
-  label { display: block; font-size: .8rem; color: var(--text2); margin-bottom: .3rem; }
-  input, select, textarea {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    color: var(--text); padding: .55rem .7rem; border-radius: 6px;
-    font-size: .88rem; transition: border .2s;
-  }
-  input:focus, select:focus, textarea:focus {
-    outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,99,255,.2);
-  }
-  select option { background: var(--surface2); }
-
-  /* BUTTONS */
-  .btn {
-    padding: .55rem 1.1rem; border-radius: 6px; border: none; cursor: pointer;
-    font-size: .88rem; font-weight: 600; transition: all .2s; display: inline-flex;
-    align-items: center; gap: .4rem;
-  }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: #5a52d5; }
-  .btn-success { background: var(--green); color: white; }
-  .btn-success:hover { background: #059669; }
-  .btn-danger { background: var(--red); color: white; }
-  .btn-danger:hover { background: #dc2626; }
-  .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
-  .btn-sm { padding: .35rem .7rem; font-size: .8rem; }
-  .btn-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
-
-  /* TABLE */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-  th { background: var(--surface2); color: var(--text2); padding: .6rem .8rem; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); }
-  td { padding: .6rem .8rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  tr:hover td { background: rgba(255,255,255,.02); }
-
-  /* MODELO CASILLAS */
-  .modelo-section { margin-bottom: 1.2rem; }
-  .casilla-row {
-    display: grid; grid-template-columns: 60px 1fr 140px;
-    gap: .5rem; align-items: center; padding: .45rem .6rem;
-    border-bottom: 1px solid var(--border); font-size: .87rem;
-  }
-  .casilla-num { font-weight: 700; color: var(--accent2); font-size: .85rem; }
-  .casilla-desc { color: var(--text2); font-size: .8rem; }
-  .casilla-val { text-align: right; font-weight: 600; }
-  .casilla-row.total-row { background: var(--surface2); border-radius: 6px; margin-top: .4rem; }
-  .casilla-row.total-row .casilla-val { color: var(--accent2); font-size: 1rem; }
-
-  /* ALERTS */
-  .alert { padding: .75rem 1rem; border-radius: 6px; font-size: .87rem; margin-bottom: .8rem; display: flex; gap: .6rem; align-items: flex-start; }
-  .alert-warning { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: var(--yellow); }
-  .alert-info { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); color: var(--blue); }
-  .alert-success { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: var(--green); }
-  .alert-danger { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: var(--red); }
-
-  /* TRAMOS */
-  .tramo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .6rem; }
-  .tramo-card { border: 1px solid var(--border); border-radius: 6px; padding: .7rem; font-size: .82rem; }
-  .tramo-card.activo { border-color: var(--accent); background: rgba(108,99,255,.08); }
-  .tramo-titulo { font-weight: 600; margin-bottom: .2rem; }
-  .tramo-cuota { color: var(--accent2); font-weight: 700; }
-
-  /* PERIODO SELECTOR */
-  .periodo-bar { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.2rem; }
-  .periodo-bar label { margin: 0; font-size: .85rem; }
-  .periodo-bar select, .periodo-bar input { width: auto; }
-
-  /* MISC */
-  .separator { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0; }
-  .nota { font-size: .78rem; color: var(--text2); font-style: italic; }
-  .tag { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
-  .tag-green { background: rgba(16,185,129,.15); color: var(--green); }
-  .tag-red { background: rgba(239,68,68,.15); color: var(--red); }
-  .tag-yellow { background: rgba(245,158,11,.15); color: var(--yellow); }
-  .tag-blue { background: rgba(59,130,246,.15); color: var(--blue); }
-  .tag-purple { background: rgba(108,99,255,.15); color: var(--accent2); }
-
-  @media (max-width: 600px) {
-    header { flex-direction: column; align-items: flex-start; }
-    .setup-grid { grid-template-columns: 1fr; }
-    .casilla-row { grid-template-columns: 50px 1fr; }
-    .casilla-val { grid-column: 1/-1; text-align: left; }
-  }
-</style>
-</head>
-<body>
-
-<!-- ═══════════════════════════════════════
-     MODAL CONFIGURACIÓN INICIAL (F1)
-════════════════════════════════════════ -->
-<div id="setupModal">
-  <div class="setup-box">
-    <h2>⚙️ Configuración inicial</h2>
-    <p>Introduce tus datos como autónomo. Se guardarán solo en este navegador (localStorage) y nunca aparecerán en el código fuente.</p>
-    <div class="setup-grid">
-      <div class="full"><label>Nombre completo *</label><input id="cfg-nombre" type="text" placeholder="Tu nombre completo"></div>
-      <div><label>NIF / NIE *</label><input id="cfg-nif" type="text" placeholder="12345678X" maxlength="10"></div>
-      <div><label>Fecha de alta en Hacienda *</label><input id="cfg-alta" type="date"></div>
-      <div class="full"><label>Actividad económica *</label><input id="cfg-actividad" type="text" placeholder="Ej: Servicios de psicología y autor literario"></div>
-      <div><label>Epígrafe IAE</label><input id="cfg-epigrafe" type="text" placeholder="Ej: 852 / 899"></div>
-      <div><label>Régimen fiscal</label>
-        <select id="cfg-regimen">
-          <option value="estimacion_directa_simplificada">Estimación Directa Simplificada</option>
-          <option value="estimacion_directa_normal">Estimación Directa Normal</option>
-        </select>
-      </div>
-      <div class="full"><label>Dirección (solo para facturas — no se sube a ningún servidor)</label><input id="cfg-direccion" type="text" placeholder="Calle, número, piso"></div>
-      <div><label>Municipio</label><input id="cfg-municipio" type="text" placeholder="Sevilla"></div>
-      <div><label>CP</label><input id="cfg-cp" type="text" placeholder="41001" maxlength="5"></div>
-      <div><label>Provincia</label><input id="cfg-provincia" type="text" placeholder="Sevilla"></div>
-    </div>
-    <div class="btn-row" style="margin-top:1.2rem">
-      <button class="btn btn-primary" onclick="guardarConfiguracion()">💾 Guardar y comenzar</button>
-    </div>
-    <p class="nota" style="margin-top:.8rem">* Campos obligatorios. Puedes editar estos datos en cualquier momento desde la pestaña "Utilidades".</p>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════
-     HEADER
-════════════════════════════════════════ -->
-<header>
-  <div>
-    <h1>📊 Sistema de Gestión Fiscal — Autónomo</h1>
-    <div class="header-info" id="headerInfo">Cargando...</div>
-  </div>
-  <div class="header-actions">
-    <button class="btn btn-ghost btn-sm" onclick="exportarDatos()">⬇️ Exportar</button>
-    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarDatos(event)">
-  </div>
-</header>
-
-<!-- ═══════════════════════════════════════
-     NAV TABS
-════════════════════════════════════════ -->
-<nav id="mainNav">
-  <button class="active" onclick="cambiarTab(event,'dashboard')">🏠 Resumen</button>
-  <button onclick="cambiarTab(event,'facturas')">🧾 Facturas</button>
-  <button onclick="cambiarTab(event,'gastos')">💸 Gastos</button>
-  <button onclick="cambiarTab(event,'modelo303')">📋 Mod. 303 IVA</button>
-  <button onclick="cambiarTab(event,'modelo130')">📋 Mod. 130 IRPF</button>
-  <button onclick="cambiarTab(event,'modelo349')">📋 Mod. 349</button>
-  <button onclick="cambiarTab(event,'autonomos')">👤 Cuota Autónomos</button>
-  <button onclick="cambiarTab(event,'utilidades')">🔧 Utilidades</button>
-</nav>
-
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="noindex, nofollow"><title>Sistema de Gestión Fiscal — Autónomo</title><style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#222535;--border:#2e3250;--accent:#6c63ff;--accent2:#a78bfa;--text:#e8eaf6;--text2:#9ca3af;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;}
+#setupModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;}
+#setupModal.active{display:flex;}
+.setup-box{background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:2rem;max-width:520px;width:90%;}
+.setup-box h2{color:var(--accent2);margin-bottom:.5rem;}
+.setup-box p{color:var(--text2);font-size:.9rem;margin-bottom:1.5rem;}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;}
+.setup-grid .full{grid-column:1/-1;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+header h1{font-size:1.1rem;color:var(--accent2);}
+.header-info{font-size:.8rem;color:var(--text2);}
+.header-actions{display:flex;gap:.5rem;}
+nav{background:var(--surface2);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;gap:.2rem;overflow-x:auto;}
+nav button{background:none;border:none;color:var(--text2);padding:.75rem 1.1rem;cursor:pointer;border-bottom:2px solid transparent;font-size:.9rem;white-space:nowrap;transition:all .2s;}
+nav button:hover{color:var(--text);}
+nav button.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+main{padding:1.5rem;max-width:1100px;margin:0 auto;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem;}
+.card h3{color:var(--accent2);margin-bottom:1rem;font-size:1rem;}
+.card h4{color:var(--text);margin:.8rem 0 .4rem;font-size:.9rem;}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.25rem;}
+.dash-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1.1rem;text-align:center;}
+.dash-card .label{font-size:.78rem;color:var(--text2);margin-bottom:.4rem;}
+.dash-card .value{font-size:1.5rem;font-weight:700;}
+.dash-card .sub{font-size:.75rem;color:var(--text2);margin-top:.3rem;}
+.green{color:var(--green);}.red{color:var(--red);}.yellow{color:var(--yellow);}.blue{color:var(--blue);}
+.venc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem;}
+.venc-card{border:1px solid var(--border);border-radius:8px;padding:1rem;background:var(--surface2);}
+.venc-card.pasado{border-color:var(--red);opacity:.7;}
+.venc-card.proximo{border-color:var(--yellow);}
+.venc-card.futuro{border-color:var(--border);}
+.venc-card.presentado{border-color:var(--green);}
+.venc-card .venc-title{font-weight:600;margin-bottom:.3rem;}
+.venc-card .venc-fecha{font-size:.85rem;color:var(--text2);}
+.venc-card .venc-estado{font-size:.78rem;margin-top:.4rem;padding:.2rem .5rem;border-radius:4px;display:inline-block;}
+.badge-presentado{background:rgba(16,185,129,.15);color:var(--green);}
+.badge-pendiente{background:rgba(245,158,11,.15);color:var(--yellow);}
+.badge-pasado{background:rgba(239,68,68,.15);color:var(--red);}
+.badge-futuro{background:rgba(107,99,255,.15);color:var(--accent2);}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-bottom:1rem;}
+.form-grid .full{grid-column:1/-1;}
+label{display:block;font-size:.8rem;color:var(--text2);margin-bottom:.3rem;}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.55rem .7rem;border-radius:6px;font-size:.88rem;transition:border .2s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,99,255,.2);}
+select option{background:var(--surface2);}
+.btn{padding:.55rem 1.1rem;border-radius:6px;border:none;cursor:pointer;font-size:.88rem;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:.4rem;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{background:#5a52d5;}
+.btn-success{background:var(--green);color:white;}
+.btn-success:hover{background:#059669;}
+.btn-danger{background:var(--red);color:white;}
+.btn-danger:hover{background:#dc2626;}
+.btn-warning{background:var(--yellow);color:#1a1d27;}
+.btn-warning:hover{background:#d97706;}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent);}
+.btn-sm{padding:.35rem .7rem;font-size:.8rem;}
+.btn-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.85rem;}
+th{background:var(--surface2);color:var(--text2);padding:.6rem .8rem;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:.6rem .8rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.modelo-section{margin-bottom:1.2rem;}
+.casilla-row{display:grid;grid-template-columns:60px 1fr 140px;gap:.5rem;align-items:center;padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.87rem;}
+.casilla-num{font-weight:700;color:var(--accent2);font-size:.85rem;}
+.casilla-desc{color:var(--text2);font-size:.8rem;}
+.casilla-val{text-align:right;font-weight:600;}
+.casilla-row.total-row{background:var(--surface2);border-radius:6px;margin-top:.4rem;}
+.casilla-row.total-row .casilla-val{color:var(--accent2);font-size:1rem;}
+.alert{padding:.75rem 1rem;border-radius:6px;font-size:.87rem;margin-bottom:.8rem;display:flex;gap:.6rem;align-items:flex-start;}
+.alert-warning{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--yellow);}
+.alert-info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);}
+.alert-success{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green);}
+.alert-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+.tramo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.6rem;}
+.tramo-card{border:1px solid var(--border);border-radius:6px;padding:.7rem;font-size:.82rem;}
+.tramo-card.activo{border-color:var(--accent);background:rgba(108,99,255,.08);}
+.tramo-titulo{font-weight:600;margin-bottom:.2rem;}
+.tramo-cuota{color:var(--accent2);font-weight:700;}
+.periodo-bar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1.2rem;}
+.periodo-bar label{margin:0;font-size:.85rem;}
+.periodo-bar select,.periodo-bar input{width:auto;}
+.separator{border:none;border-top:1px solid var(--border);margin:1.2rem 0;}
+.nota{font-size:.78rem;color:var(--text2);font-style:italic;}
+.tag{display:inline-block;padding:.15rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600;}
+.tag-green{background:rgba(16,185,129,.15);color:var(--green);}
+.tag-red{background:rgba(239,68,68,.15);color:var(--red);}
+.tag-yellow{background:rgba(245,158,11,.15);color:var(--yellow);}
+.tag-blue{background:rgba(59,130,246,.15);color:var(--blue);}
+.tag-purple{background:rgba(108,99,255,.15);color:var(--accent2);}
+.edit-mode-banner{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:var(--yellow);padding:.6rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:.88rem;display:none;}
+.edit-mode-banner.visible{display:block;}
+@media(max-width:600px){header{flex-direction:column;align-items:flex-start;}.setup-grid{grid-template-columns:1fr;}.casilla-row{grid-template-columns:50px 1fr;}.casilla-val{grid-column:1/-1;text-align:left;}}
+</style></head><body>
+<!-- MODAL CONFIG -->
+<div id="setupModal"><div class="setup-box"><h2>⚙️ Configuración inicial</h2><p>Introduce tus datos como autónomo. Se guardarán solo en este navegador y nunca en el código fuente.</p><div class="setup-grid"><div class="full"><label>Nombre completo *</label><input id="cfg-nombre" type="text" placeholder="Tu nombre completo"></div><div><label>NIF / NIE *</label><input id="cfg-nif" type="text" placeholder="12345678X" maxlength="10"></div><div><label>Fecha de alta en Hacienda *</label><input id="cfg-alta" type="date"></div><div class="full"><label>Actividad económica *</label><input id="cfg-actividad" type="text" placeholder="Ej: Servicios de psicología y autor literario"></div><div><label>Epígrafe IAE</label><input id="cfg-epigrafe" type="text" placeholder="Ej: 852 / 899"></div><div><label>Régimen fiscal</label><select id="cfg-regimen"><option value="estimacion_directa_simplificada">Estimación Directa Simplificada</option><option value="estimacion_directa_normal">Estimación Directa Normal</option></select></div><div class="full"><label>Dirección (para facturas, nunca sube a servidores)</label><input id="cfg-direccion" type="text"></div><div><label>Municipio</label><input id="cfg-municipio" type="text" placeholder="Sevilla"></div><div><label>CP</label><input id="cfg-cp" type="text" maxlength="5"></div><div><label>Provincia</label><input id="cfg-provincia" type="text" placeholder="Sevilla"></div></div><div class="btn-row" style="margin-top:1.2rem"><button class="btn btn-primary" onclick="guardarConfiguracion()">Guardar y comenzar</button></div><p class="nota" style="margin-top:.8rem">* Campos obligatorios. Editable en cualquier momento desde Utilidades.</p></div></div>
+<!-- HEADER -->
+<header><div><h1>📊 Sistema de Gestión Fiscal — Autónomo</h1><div class="header-info" id="headerInfo">Cargando...</div></div><div class="header-actions"><button class="btn btn-ghost btn-sm" onclick="exportarDatos()">⬇️ Exportar</button><button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">⬆️ Importar</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importarDatos(event)"></div></header>
+<!-- NAV -->
+<nav id="mainNav"><button class="active" onclick="cambiarTab(event,'dashboard')">🏠 Resumen</button><button onclick="cambiarTab(event,'facturas')">🧾 Facturas</button><button onclick="cambiarTab(event,'gastos')">💸 Gastos</button><button onclick="cambiarTab(event,'modelo303')">📋 Mod. 303 IVA</button><button onclick="cambiarTab(event,'modelo130')">📋 Mod. 130 IRPF</button><button onclick="cambiarTab(event,'modelo190')">📋 Mod. 190</button><button id="btn-tab-349" onclick="cambiarTab(event,'modelo349')" style="display:none">📋 Mod. 349</button><button onclick="cambiarTab(event,'autonomos')">👤 Cuota Autónomos</button><button onclick="cambiarTab(event,'utilidades')">🔧 Utilidades</button></nav>
 <main>
-
-<!-- ─────────────────────────────────────
-     TAB: DASHBOARD
-───────────────────────────────────────── -->
-<div id="tab-dashboard" class="tab-content active">
-  <div id="alertas-dashboard"></div>
-  <div class="dash-grid" id="dash-grid"></div>
-
-  <div class="card">
-    <h3>📅 Calendario fiscal <span id="dash-anyo"></span></h3>
-    <div class="venc-grid" id="venc-grid"></div>
-    <p class="nota" style="margin-top:.8rem">Los vencimientos se calculan automáticamente. Marca como "Presentado" en cada modelo cuando lo hayas tramitado.</p>
-  </div>
-
-  <div class="card">
-    <h3>📊 Ingresos vs Gastos — Año en curso</h3>
-    <canvas id="chartResumen" height="80"></canvas>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: FACTURAS
-───────────────────────────────────────── -->
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-content active"><div id="alertas-dashboard"></div><div class="dash-grid" id="dash-grid"></div><div class="card"><h3>📅 Calendario fiscal <span id="dash-anyo"></span></h3><div class="venc-grid" id="venc-grid"></div><p class="nota" style="margin-top:.8rem">Vencimientos calculados automáticamente. Marca como Presentado en cada modelo.</p></div></div>
+<!-- FACTURAS -->
 <div id="tab-facturas" class="tab-content">
-  <div class="card">
-    <h3>➕ Nueva factura</h3>
-    <div class="form-grid">
-      <div><label>Número de factura</label><input id="fac-num" type="text" placeholder="Ej: 2026/001" oninput="normalizarNumFac()"></div>
-      <div><label>Fecha de emisión *</label><input id="fac-fecha" type="date"></div>
-      <div class="full"><label>Cliente / Pagador *</label><input id="fac-cliente" type="text" placeholder="Nombre o razón social"></div>
-      <div><label>País del cliente *</label>
-        <select id="fac-pais" onchange="actualizarIvaLabel()">
-          <option value="ES">España</option>
-          <option value="EU">Unión Europea (con NIF intracomunitario)</option>
-          <option value="EX">Fuera de la UE / Extracomunitario</option>
-        </select>
-      </div>
-      <div><label>NIF / VAT del cliente (si aplica)</label><input id="fac-nif-cliente" type="text" placeholder="Ej: ES-B12345678 / ESxxxxxxxx"></div>
-      <div><label>Concepto *</label><input id="fac-concepto" type="text" placeholder="Descripción del servicio"></div>
-      <div><label>Tipo de servicio</label>
-        <select id="fac-tipo">
-          <option value="sesion_terapia">Sesión de psicología / terapia</option>
-          <option value="supervision">Supervisión / formación</option>
-          <option value="royalties_libro">Royalties libro (Amazon KDP)</option>
-          <option value="royalties_apple">Royalties libro (Apple Books)</option>
-          <option value="servicio_digital">Servicio digital / plataforma (Upwork, etc.)</option>
-          <option value="otro">Otro</option>
-        </select>
-      </div>
-      <div><label>Base imponible (€) *</label><input id="fac-base" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcularTotalesFac()"></div>
-      <div>
-        <label id="fac-iva-label">IVA (%)</label>
-        <select id="fac-iva-pct" onchange="calcularTotalesFac()">
-          <option value="21">21% — General</option>
-          <option value="10">10% — Reducido</option>
-          <option value="4">4% — Superreducido</option>
-          <option value="0">0% — Exento / Inversión sujeto pasivo / Extracomunitario</option>
-        </select>
-      </div>
-      <div><label>IRPF Retención (%)</label>
-        <select id="fac-irpf-pct" onchange="calcularTotalesFac()">
-          <option value="0">0% — Sin retención</option>
-          <option value="7">7% — Nuevos autónomos (1er y 2º año)</option>
-          <option value="15">15% — General autónomo</option>
-          <option value="19">19% — Arrendamientos, etc.</option>
-        </select>
-      </div>
-      <div><label>Método de cobro</label>
-        <select id="fac-metodo">
-          <option value="stripe">Stripe</option>
-          <option value="transferencia">Transferencia bancaria</option>
-          <option value="efectivo">Efectivo</option>
-          <option value="paypal">PayPal</option>
-          <option value="otro">Otro</option>
-        </select>
-      </div>
-      <div><label>Estado</label>
-        <select id="fac-estado">
-          <option value="cobrada">Cobrada</option>
-          <option value="pendiente">Pendiente de cobro</option>
-          <option value="anulada">Anulada</option>
-        </select>
-      </div>
-    </div>
-    <div id="fac-resumen-calc" style="display:none; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:.8rem; margin-bottom:.8rem; font-size:.87rem;">
-      <div id="fac-calc-lines"></div>
-    </div>
-    <div id="fac-aviso-regimen" class="alert alert-info" style="display:none"></div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="guardarFactura()">💾 Guardar factura</button>
-      <button class="btn btn-ghost" onclick="limpiarFormFactura()">✖ Limpiar</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>📋 Facturas registradas</h3>
-    <div class="periodo-bar">
-      <label>Año:</label>
-      <select id="fac-filtro-anyo" onchange="renderFacturas()">
-        <option value="todos">Todos</option>
-      </select>
-      <label>Trimestre:</label>
-      <select id="fac-filtro-trim" onchange="renderFacturas()">
-        <option value="todos">Todos</option>
-        <option value="1">T1 (Ene–Mar)</option>
-        <option value="2">T2 (Abr–Jun)</option>
-        <option value="3">T3 (Jul–Sep)</option>
-        <option value="4">T4 (Oct–Dic)</option>
-      </select>
-      <label>Estado:</label>
-      <select id="fac-filtro-estado" onchange="renderFacturas()">
-        <option value="todos">Todos</option>
-        <option value="cobrada">Cobradas</option>
-        <option value="pendiente">Pendientes</option>
-        <option value="anulada">Anuladas</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Nº</th><th>Fecha</th><th>Cliente</th><th>Base</th><th>IVA</th><th>IRPF</th><th>Total</th><th>Estado</th><th></th></tr></thead>
-        <tbody id="tabla-facturas"></tbody>
-      </table>
-    </div>
-    <div id="fac-totales" style="margin-top:.8rem; font-size:.87rem; color:var(--text2);"></div>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: GASTOS
-───────────────────────────────────────── -->
+<div class="card"><div id="fac-edit-banner" class="edit-mode-banner">✏️ Modo edición activo — Estás modificando una factura existente.</div><h3 id="fac-form-title">➕ Nueva factura</h3><div class="form-grid"><div><label>Número de factura</label><input id="fac-num" type="text" placeholder="Ej: 2026/001" oninput="normalizarNumFac()"></div><div><label>Fecha de emisión *</label><input id="fac-fecha" type="date"></div><div class="full"><label>Cliente / Pagador *</label><input id="fac-cliente" type="text" placeholder="Nombre o razón social"></div><div><label>País del cliente *</label><select id="fac-pais" onchange="actualizarIvaLabel()"><option value="ES">🇪🇸 España</option><option value="EU">🇪🇺 UE (NIF intracomunitario)</option><option value="EX">🌍 Fuera de la UE</option></select></div><div><label>NIF / VAT del cliente</label><input id="fac-nif-cliente" type="text" placeholder="ESxxxxxxxxx"></div><div><label>Concepto *</label><input id="fac-concepto" type="text" placeholder="Descripción del servicio"></div><div><label>Tipo de servicio</label><select id="fac-tipo"><option value="sesion_terapia">Sesión de psicología / terapia</option><option value="supervision">Supervisión / formación</option><option value="royalties_libro">Royalties libro (Amazon KDP)</option><option value="royalties_apple">Royalties libro (Apple Books)</option><option value="servicio_digital">Servicio digital / plataforma (Upwork)</option><option value="otro">Otro</option></select></div><div><label>Base imponible (€) *</label><input id="fac-base" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcularTotalesFac()"></div><div><label id="fac-iva-label">IVA (%)</label><select id="fac-iva-pct" onchange="calcularTotalesFac()"><option value="21">21% — General</option><option value="10">10% — Reducido</option><option value="4">4% — Superreducido</option><option value="0">0% — Exento / Inv. sujeto pasivo / Extracom.</option></select></div><div><label>IRPF Retención (%)</label><select id="fac-irpf-pct" onchange="calcularTotalesFac()"><option value="0">0% — Sin retención</option><option value="7">7% — Nuevos autónomos</option><option value="15">15% — General autónomo</option><option value="19">19% — Arrendamientos</option></select></div><div><label>Método de cobro</label><select id="fac-metodo"><option value="stripe">Stripe</option><option value="transferencia">Transferencia bancaria</option><option value="efectivo">Efectivo</option><option value="paypal">PayPal</option><option value="otro">Otro</option></select></div><div><label>Estado</label><select id="fac-estado"><option value="cobrada">Cobrada</option><option value="pendiente">Pendiente de cobro</option><option value="anulada">Anulada</option></select></div></div><div id="fac-resumen-calc" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.8rem;margin-bottom:.8rem;font-size:.87rem;"><div id="fac-calc-lines"></div></div><div id="fac-aviso-regimen" class="alert alert-info" style="display:none"></div><input type="hidden" id="fac-edit-id" value="">
+<div class="btn-row"><button class="btn btn-primary" onclick="guardarFactura()">Guardar factura</button><button class="btn btn-ghost" onclick="limpiarFormFactura()">✖ Cancelar / Limpiar</button></div></div>
+<div class="card"><h3>Facturas registradas</h3><div class="periodo-bar"><label>Año:</label><select id="fac-filtro-anyo" onchange="renderFacturas()"><option value="todos">Todos</option></select><label>Trimestre:</label><select id="fac-filtro-trim" onchange="renderFacturas()"><option value="todos">Todos</option><option value="1">T1 (Ene–Mar)</option><option value="2">T2 (Abr–Jun)</option><option value="3">T3 (Jul–Sep)</option><option value="4">T4 (Oct–Dic)</option></select><label>Estado:</label><select id="fac-filtro-estado" onchange="renderFacturas()"><option value="todos">Todos</option><option value="cobrada">Cobradas</option><option value="pendiente">Pendientes</option><option value="anulada">Anuladas</option></select></div><div class="table-wrap"><table><thead><tr><th>Nº</th><th>Fecha</th><th>Cliente</th><th>Base</th><th>IVA</th><th>IRPF</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-facturas"></tbody></table></div><div id="fac-totales" style="margin-top:.8rem;font-size:.87rem;color:var(--text2);"></div></div></div>
+<!-- GASTOS -->
 <div id="tab-gastos" class="tab-content">
-  <div class="card">
-    <h3>➕ Nuevo gasto</h3>
-    <div class="form-grid">
-      <div><label>Fecha *</label><input id="gas-fecha" type="date"></div>
-      <div><label>Proveedor / Concepto *</label><input id="gas-proveedor" type="text" placeholder="Nombre del proveedor o concepto"></div>
-      <div><label>Categoría *</label>
-        <select id="gas-categoria" onchange="mostrarAvisoCuotaAutonomos()">
-          <option value="cuota_autonomos">Cuota de autónomos (TGSS)</option>
-          <option value="alquiler_local">Alquiler local / despacho</option>
-          <option value="suministros">Suministros (luz, internet, etc.)</option>
-          <option value="material_oficina">Material de oficina</option>
-          <option value="formacion">Formación y libros</option>
-          <option value="publicidad">Publicidad y marketing</option>
-          <option value="software">Software y suscripciones</option>
-          <option value="telefono">Teléfono y comunicaciones</option>
-          <option value="transporte">Transporte y dietas</option>
-          <option value="seguros">Seguros profesionales</option>
-          <option value="asesoria">Asesoría / servicios profesionales</option>
-          <option value="amortizacion">Amortizaciones</option>
-          <option value="otro">Otro gasto deducible</option>
-        </select>
-      </div>
-      <div><label>Importe con IVA (€) *</label><input id="gas-total" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcularGastoBase()"></div>
-      <div><label>IVA soportado (%)</label>
-        <select id="gas-iva-pct" onchange="calcularGastoBase()">
-          <option value="21">21%</option>
-          <option value="10">10%</option>
-          <option value="4">4%</option>
-          <option value="0">0% / Sin IVA</option>
-        </select>
-      </div>
-      <div><label>Base imponible (€)</label><input id="gas-base" type="number" step="0.01" placeholder="Calculado automático" readonly></div>
-      <div><label>Nº factura / ticket</label><input id="gas-nfactura" type="text" placeholder="Referencia del justificante"></div>
-      <div><label>Deducible</label>
-        <select id="gas-deducible">
-          <option value="100">100% deducible</option>
-          <option value="50">50% (uso mixto)</option>
-          <option value="0">No deducible</option>
-        </select>
-      </div>
-      <div class="full"><label>Notas</label><input id="gas-notas" type="text" placeholder="Observaciones opcionales"></div>
-    </div>
-    <div id="gas-aviso-cuota" class="alert alert-info" style="display:none">
-      <div>
-        <strong>Cuota de autónomos:</strong> Para 2025-2026 se aplica el sistema de cotización por ingresos reales. Consulta la pestaña <strong>Cuota Autónomos</strong> para verificar el tramo que corresponde a tus ingresos y si puedes solicitar cambio de tramo a la TGSS.
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="guardarGasto()">💾 Guardar gasto</button>
-      <button class="btn btn-ghost" onclick="limpiarFormGasto()">✖ Limpiar</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>📋 Gastos registrados</h3>
-    <div class="periodo-bar">
-      <label>Año:</label>
-      <select id="gas-filtro-anyo" onchange="renderGastos()">
-        <option value="todos">Todos</option>
-      </select>
-      <label>Trimestre:</label>
-      <select id="gas-filtro-trim" onchange="renderGastos()">
-        <option value="todos">Todos</option>
-        <option value="1">T1</option><option value="2">T2</option>
-        <option value="3">T3</option><option value="4">T4</option>
-      </select>
-      <label>Categoría:</label>
-      <select id="gas-filtro-cat" onchange="renderGastos()">
-        <option value="todos">Todas</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Fecha</th><th>Proveedor</th><th>Categoría</th><th>Base</th><th>IVA</th><th>Total</th><th>Deducible</th><th></th></tr></thead>
-        <tbody id="tabla-gastos"></tbody>
-      </table>
-    </div>
-    <div id="gas-totales" style="margin-top:.8rem; font-size:.87rem; color:var(--text2);"></div>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: MODELO 303
-───────────────────────────────────────── -->
-<div id="tab-modelo303" class="tab-content">
-  <div class="card">
-    <h3>📋 Modelo 303 — Autoliquidación del IVA</h3>
-    <p class="nota" style="margin-bottom:1rem">Selecciona el periodo para calcular automáticamente el modelo. Los importes se calculan sobre facturas <strong>cobradas</strong> y gastos del periodo indicado.</p>
-    <div class="periodo-bar">
-      <label>Año:</label>
-      <select id="m303-anyo" onchange="calcularModelo303()"><option>2026</option><option>2025</option></select>
-      <label>Trimestre:</label>
-      <select id="m303-trim" onchange="calcularModelo303()">
-        <option value="1">1T (Ene–Mar)</option><option value="2">2T (Abr–Jun)</option>
-        <option value="3">3T (Jul–Sep)</option><option value="4">4T (Oct–Dic)</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="calcularModelo303()">🔄 Recalcular</button>
-    </div>
-    <div id="m303-alertas"></div>
-
-    <h4>IVA DEVENGADO (IVA repercutido en tus facturas)</h4>
-    <div class="modelo-section" id="m303-devengado"></div>
-
-    <h4>IVA DEDUCIBLE (IVA soportado en tus gastos)</h4>
-    <div class="modelo-section" id="m303-deducible"></div>
-
-    <h4>RESULTADO</h4>
-    <div class="modelo-section" id="m303-resultado"></div>
-
-    <div class="btn-row">
-      <button class="btn btn-success" onclick="marcarPresentado('303')">✅ Marcar como presentado</button>
-      <button class="btn btn-ghost" onclick="window.print()">🖨 Imprimir / PDF</button>
-    </div>
-    <p class="nota" style="margin-top:.8rem">⚠️ Este sistema calcula los importes para orientarte. Verifica siempre los datos en la sede electrónica de la AEAT antes de presentar.</p>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: MODELO 130
-───────────────────────────────────────── -->
-<div id="tab-modelo130" class="tab-content">
-  <div class="card">
-    <h3>📋 Modelo 130 — Pago fraccionado del IRPF</h3>
-    <p class="nota" style="margin-bottom:1rem">El Modelo 130 se calcula de forma <strong>acumulada desde el 1 de enero</strong> hasta el final del trimestre seleccionado, como exige Hacienda.</p>
-    <div class="periodo-bar">
-      <label>Año:</label>
-      <select id="m130-anyo" onchange="calcularModelo130()"><option>2026</option><option>2025</option></select>
-      <label>Trimestre:</label>
-      <select id="m130-trim" onchange="calcularModelo130()">
-        <option value="1">1T (acumulado Ene–Mar)</option>
-        <option value="2">2T (acumulado Ene–Jun)</option>
-        <option value="3">3T (acumulado Ene–Sep)</option>
-        <option value="4">4T (acumulado Ene–Dic)</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="calcularModelo130()">🔄 Recalcular</button>
-    </div>
-    <div id="m130-alertas"></div>
-    <div class="modelo-section" id="m130-casillas"></div>
-    <div class="btn-row">
-      <button class="btn btn-success" onclick="marcarPresentado('130')">✅ Marcar como presentado</button>
-      <button class="btn btn-ghost" onclick="window.print()">🖨 Imprimir / PDF</button>
-    </div>
-    <p class="nota" style="margin-top:.8rem">⚠️ Si más del 70% de tus ingresos llevan retención del 15% de IRPF, estás exento de presentar el Mod. 130. El sistema te avisa automáticamente.</p>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: MODELO 349
-───────────────────────────────────────── -->
-<div id="tab-modelo349" class="tab-content">
-  <div class="card">
-    <h3>📋 Modelo 349 — Operaciones intracomunitarias</h3>
-    <p class="nota" style="margin-bottom:1rem">Solo debes presentarlo si has realizado operaciones con clientes de la UE que tengan NIF intracomunitario (inversión del sujeto pasivo).</p>
-    <div class="periodo-bar">
-      <label>Año:</label>
-      <select id="m349-anyo" onchange="calcularModelo349()"><option>2026</option><option>2025</option></select>
-      <label>Trimestre:</label>
-      <select id="m349-trim" onchange="calcularModelo349()">
-        <option value="1">1T</option><option value="2">2T</option>
-        <option value="3">3T</option><option value="4">4T</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" onclick="calcularModelo349()">🔄 Recalcular</button>
-    </div>
-    <div id="m349-contenido"></div>
-    <div class="btn-row">
-      <button class="btn btn-success" onclick="marcarPresentado('349')">✅ Marcar como presentado</button>
-    </div>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: CUOTA AUTÓNOMOS
-───────────────────────────────────────── -->
-<div id="tab-autonomos" class="tab-content">
-  <div class="card">
-    <h3>👤 Cuota de autónomos — Cotización por ingresos reales (2025–2026)</h3>
-    <p class="nota" style="margin-bottom:1rem">El sistema de cotización por ingresos reales tiene 15 tramos. Introduce tu rendimiento neto estimado anual para ver en qué tramo estás y cuál es tu cuota mínima y máxima.</p>
-
-    <div class="form-grid" style="max-width:400px">
-      <div><label>Rendimiento neto anual estimado (€)</label>
-        <input id="aut-rendimiento" type="number" step="100" placeholder="Ej: 8000" oninput="calcularCuotaAutonomos()">
-      </div>
-    </div>
-    <div id="aut-tramo-activo" style="margin:.8rem 0"></div>
-    <div id="aut-alertas"></div>
-
-    <hr class="separator">
-    <h4>Tabla completa de tramos 2025–2026</h4>
-    <div class="tramo-grid" id="tramo-grid"></div>
-    <p class="nota" style="margin-top:.8rem">Puedes solicitar cambio de tramo a la TGSS hasta 6 veces al año cuando tus ingresos varíen. Si en diciembre tu rendimiento real difiere del estimado, Hacienda regulariza la diferencia.</p>
-  </div>
-</div>
-
-<!-- ─────────────────────────────────────
-     TAB: UTILIDADES
-───────────────────────────────────────── -->
+<div class="card"><div id="gas-edit-banner" class="edit-mode-banner">✏️ Modo edición activo — Estás modificando un gasto existente.</div><h3 id="gas-form-title">➕ Nuevo gasto</h3><div class="form-grid"><div><label>Fecha *</label><input id="gas-fecha" type="date"></div><div><label>Proveedor / Concepto *</label><input id="gas-proveedor" type="text" placeholder="Nombre del proveedor"></div><div><label>Categoría *</label><select id="gas-categoria" onchange="mostrarAvisoCuotaAutonomos()"><option value="cuota_autonomos">Cuota de autónomos (TGSS)</option><option value="alquiler_local">Alquiler local / despacho</option><option value="suministros">Suministros (luz, internet...)</option><option value="material_oficina">Material de oficina</option><option value="formacion">Formación y libros</option><option value="publicidad">Publicidad y marketing</option><option value="software">Software y suscripciones</option><option value="telefono">Teléfono y comunicaciones</option><option value="transporte">Transporte y dietas</option><option value="seguros">Seguros profesionales</option><option value="asesoria">Asesoría / servicios profesionales</option><option value="amortizacion">Amortizaciones</option><option value="otro">Otro gasto deducible</option></select></div><div><label>Importe con IVA (€) *</label><input id="gas-total" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcularGastoBase()"></div><div><label>IVA soportado (%)</label><select id="gas-iva-pct" onchange="calcularGastoBase()"><option value="21">21%</option><option value="10">10%</option><option value="4">4%</option><option value="0">0% / Sin IVA</option></select></div><div><label>Base imponible (€)</label><input id="gas-base" type="number" step="0.01" placeholder="Calculado automático" readonly></div><div><label>Nº factura / ticket</label><input id="gas-nfactura" type="text" placeholder="Referencia del justificante"></div><div><label>Deducible</label><select id="gas-deducible"><option value="100">100% deducible</option><option value="50">50% (uso mixto)</option><option value="0">No deducible</option></select></div><div class="full"><label>Notas</label><input id="gas-notas" type="text" placeholder="Observaciones opcionales"></div></div><div id="gas-aviso-cuota" class="alert alert-info" style="display:none"><div><strong>Cuota de autónomos:</strong> Para 2025–2026 se aplica cotización por ingresos reales. Consulta la pestaña <strong>Cuota Autónomos</strong> para verificar tu tramo.</div></div><input type="hidden" id="gas-edit-id" value=""><div class="btn-row"><button class="btn btn-primary" onclick="guardarGasto()">Guardar gasto</button><button class="btn btn-ghost" onclick="limpiarFormGasto()">✖ Cancelar / Limpiar</button></div></div>
+<div class="card"><h3>Gastos registrados</h3><div class="periodo-bar"><label>Año:</label><select id="gas-filtro-anyo" onchange="renderGastos()"><option value="todos">Todos</option></select><label>Trimestre:</label><select id="gas-filtro-trim" onchange="renderGastos()"><option value="todos">Todos</option><option value="1">T1</option><option value="2">T2</option><option value="3">T3</option><option value="4">T4</option></select><label>Categoría:</label><select id="gas-filtro-cat" onchange="renderGastos()"><option value="todos">Todas</option></select></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Categoría</th><th>Base</th><th>IVA</th><th>Total</th><th>Deducible</th><th></th></tr></thead><tbody id="tabla-gastos"></tbody></table></div><div id="gas-totales" style="margin-top:.8rem;font-size:.87rem;color:var(--text2);"></div></div></div>
+<!-- MODELO 303 -->
+<div id="tab-modelo303" class="tab-content"><div class="card"><h3>Modelo 303 — Autoliquidación del IVA</h3><p class="nota" style="margin-bottom:1rem">Los importes se calculan sobre facturas <strong>cobradas</strong> y gastos del periodo.</p><div class="periodo-bar"><label>Año:</label><select id="m303-anyo" onchange="calcularModelo303()"></select><label>Trimestre:</label><select id="m303-trim" onchange="calcularModelo303()"><option value="1">1T (Ene–Mar)</option><option value="2">2T (Abr–Jun)</option><option value="3">3T (Jul–Sep)</option><option value="4">4T (Oct–Dic)</option></select><button class="btn btn-ghost btn-sm" onclick="calcularModelo303()">🔄 Recalcular</button></div><div id="m303-alertas"></div><h4>IVA DEVENGADO</h4><div class="modelo-section" id="m303-devengado"></div><h4>IVA DEDUCIBLE</h4><div class="modelo-section" id="m303-deducible"></div><h4>RESULTADO</h4><div class="modelo-section" id="m303-resultado"></div><div class="btn-row"><button class="btn btn-success" onclick="marcarPresentado('303')">✅ Marcar como presentado</button><button class="btn btn-ghost" onclick="window.print()">🖨 Imprimir / PDF</button></div><p class="nota" style="margin-top:.8rem">⚠️ Verifica siempre en la AEAT antes de presentar.</p></div></div>
+<!-- MODELO 130 -->
+<div id="tab-modelo130" class="tab-content"><div class="card"><h3>Modelo 130 — Pago fraccionado IRPF</h3><p class="nota" style="margin-bottom:1rem">Cálculo <strong>acumulado desde el 1 de enero</strong> hasta fin del trimestre, como exige Hacienda.</p><div class="periodo-bar"><label>Año:</label><select id="m130-anyo" onchange="calcularModelo130()"></select><label>Trimestre:</label><select id="m130-trim" onchange="calcularModelo130()"><option value="1">1T (acumulado Ene–Mar)</option><option value="2">2T (acumulado Ene–Jun)</option><option value="3">3T (acumulado Ene–Sep)</option><option value="4">4T (acumulado Ene–Dic)</option></select><button class="btn btn-ghost btn-sm" onclick="calcularModelo130()">🔄 Recalcular</button></div><div id="m130-alertas"></div><div class="modelo-section" id="m130-casillas"></div><div class="btn-row"><button class="btn btn-success" onclick="marcarPresentado('130')">✅ Marcar como presentado</button><button class="btn btn-ghost" onclick="window.print()">🖨 Imprimir / PDF</button></div><p class="nota" style="margin-top:.8rem">⚠️ Si más del 70% de tus ingresos llevan retención del 15%, estás exento. El sistema te avisa.</p></div></div>
+<!-- MODELO 190 -->
+<div id="tab-modelo190" class="tab-content"><div class="card"><h3>Modelo 190 — Resumen anual de retenciones</h3><p class="nota" style="margin-bottom:1rem">El Modelo 190 se presenta <strong>una vez al año en enero</strong> y resume todas las retenciones de IRPF practicadas en el año anterior. Solo es relevante si alguna de tus facturas lleva retención aplicada por el pagador.</p><div class="periodo-bar"><label>Año a resumir:</label><select id="m190-anyo" onchange="calcularModelo190()"></select><button class="btn btn-ghost btn-sm" onclick="calcularModelo190()">🔄 Calcular</button></div><div id="m190-alertas"></div><div id="m190-contenido"></div><div class="btn-row"><button class="btn btn-success" onclick="marcarPresentado190()">✅ Marcar como presentado</button><button class="btn btn-ghost" onclick="window.print()">🖨 Imprimir / PDF</button></div><p class="nota" style="margin-top:.8rem">⚠️ El Mod. 190 se presenta entre el 1 y el 31 de enero de cada año. Lo presentas tú si eres el perceptor de las retenciones (el pagador ya las ingresó en Hacienda). Sirve para que Hacienda cuadre con tu IRPF anual.</p></div></div>
+<!-- MODELO 349 (oculto por defecto, visible si hay facturas UE) -->
+<div id="tab-modelo349" class="tab-content"><div class="card"><h3>Modelo 349 — Operaciones intracomunitarias</h3><p class="nota" style="margin-bottom:1rem">Solo debes presentarlo si tienes clientes de la UE con NIF intracomunitario (inversión del sujeto pasivo). Si no tienes este tipo de clientes, <strong>no necesitas presentar este modelo</strong>.</p><div class="periodo-bar"><label>Año:</label><select id="m349-anyo" onchange="calcularModelo349()"></select><label>Trimestre:</label><select id="m349-trim" onchange="calcularModelo349()"><option value="1">1T</option><option value="2">2T</option><option value="3">3T</option><option value="4">4T</option></select><button class="btn btn-ghost btn-sm" onclick="calcularModelo349()">🔄 Recalcular</button></div><div id="m349-contenido"></div><div class="btn-row"><button class="btn btn-success" onclick="marcarPresentado('349')">✅ Marcar como presentado</button></div></div></div>
+<!-- CUOTA AUTONOMOS -->
+<div id="tab-autonomos" class="tab-content"><div class="card"><h3>Cuota de autónomos — Cotización por ingresos reales (2025–2026)</h3><p class="nota" style="margin-bottom:1rem">15 tramos. Introduce tu rendimiento neto anual estimado para ver tu tramo y cuota mínima.</p><div class="form-grid" style="max-width:400px"><div><label>Rendimiento neto anual estimado (€)</label><input id="aut-rendimiento" type="number" step="100" placeholder="Ej: 8000" oninput="calcularCuotaAutonomos()"></div></div><div id="aut-tramo-activo" style="margin:.8rem 0"></div><div id="aut-alertas"></div><hr class="separator"><h4>Tabla de tramos 2025–2026</h4><div class="tramo-grid" id="tramo-grid"></div><p class="nota" style="margin-top:.8rem">Puedes solicitar cambio de tramo hasta 6 veces al año.</p></div></div>
+<!-- UTILIDADES -->
 <div id="tab-utilidades" class="tab-content">
-  <div class="card">
-    <h3>⚙️ Mis datos de configuración</h3>
-    <div class="form-grid">
-      <div class="full"><label>Nombre completo</label><input id="util-nombre" type="text"></div>
-      <div><label>NIF / NIE</label><input id="util-nif" type="text"></div>
-      <div><label>Fecha de alta en Hacienda</label><input id="util-alta" type="date"></div>
-      <div class="full"><label>Actividad económica</label><input id="util-actividad" type="text"></div>
-      <div><label>Epígrafe IAE</label><input id="util-epigrafe" type="text"></div>
-      <div><label>Régimen fiscal</label>
-        <select id="util-regimen">
-          <option value="estimacion_directa_simplificada">Estimación Directa Simplificada</option>
-          <option value="estimacion_directa_normal">Estimación Directa Normal</option>
-        </select>
-      </div>
-      <div class="full"><label>Dirección</label><input id="util-direccion" type="text"></div>
-      <div><label>Municipio</label><input id="util-municipio" type="text"></div>
-      <div><label>CP</label><input id="util-cp" type="text"></div>
-      <div><label>Provincia</label><input id="util-provincia" type="text"></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="actualizarConfiguracion()">💾 Guardar cambios</button>
-      <button class="btn btn-danger" onclick="limpiarConfiguracion()">🗑 Limpiar configuración</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>🗂 Gestión de datos</h3>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="exportarDatos()">⬇️ Exportar todo a JSON</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('importFile2').click()">⬆️ Importar desde JSON</button>
-      <input type="file" id="importFile2" accept=".json" style="display:none" onchange="importarDatos(event)">
-    </div>
-    <p class="nota" style="margin-top:.8rem">Haz una copia de seguridad periódica exportando el JSON. Guárdalo en un lugar seguro (no en GitHub).</p>
-    <hr class="separator">
-    <h4>⚠️ Zona de peligro</h4>
-    <div class="btn-row">
-      <button class="btn btn-danger btn-sm" onclick="borrarTodosLosDatos()">🗑 Borrar TODOS los datos</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>ℹ️ Información sobre seguridad</h3>
-    <div class="alert alert-info">
-      <div>
-        <strong>Este sistema es 100% local.</strong> Todos tus datos (facturas, gastos, configuración) se almacenan únicamente en el <code>localStorage</code> de este navegador. Ningún dato se envía a ningún servidor. El código fuente en GitHub no contiene ningún dato personal tuyo.
-      </div>
-    </div>
-    <div class="alert alert-warning">
-      <div>
-        <strong>Haz copias de seguridad.</strong> El localStorage puede borrarse si limpias los datos del navegador. Exporta tu JSON regularmente y guárdalo en local (no lo subas a GitHub).
-      </div>
-    </div>
-  </div>
-</div>
-
+<div class="card"><h3>⚙️ Mis datos de configuración</h3><div class="form-grid"><div class="full"><label>Nombre completo</label><input id="util-nombre" type="text"></div><div><label>NIF / NIE</label><input id="util-nif" type="text"></div><div><label>Fecha de alta</label><input id="util-alta" type="date"></div><div class="full"><label>Actividad económica</label><input id="util-actividad" type="text"></div><div><label>Epígrafe IAE</label><input id="util-epigrafe" type="text"></div><div><label>Régimen fiscal</label><select id="util-regimen"><option value="estimacion_directa_simplificada">Estimación Directa Simplificada</option><option value="estimacion_directa_normal">Estimación Directa Normal</option></select></div><div class="full"><label>Dirección</label><input id="util-direccion" type="text"></div><div><label>Municipio</label><input id="util-municipio" type="text"></div><div><label>CP</label><input id="util-cp" type="text"></div><div><label>Provincia</label><input id="util-provincia" type="text"></div></div><div class="btn-row"><button class="btn btn-primary" onclick="actualizarConfiguracion()">Guardar cambios</button><button class="btn btn-danger" onclick="limpiarConfiguracion()">🗑 Limpiar configuración</button></div></div>
+<div class="card"><h3>🔧 Reparar datos migrados</h3><p style="font-size:.87rem;color:var(--text2);margin-bottom:.8rem">Si has migrado datos del sistema anterior y el IVA repercutido o las retenciones aparecen a cero, usa esta herramienta para recalcularlos automáticamente desde los importes guardados.</p><div id="reparacion-resultado"></div><div class="btn-row"><button class="btn btn-warning" onclick="repararDatosMigrados()">🔧 Revisar y reparar datos migrados</button></div></div>
+<div class="card"><h3>Gestión de datos</h3><div class="btn-row"><button class="btn btn-ghost" onclick="exportarDatos()">⬇️ Exportar a JSON</button><button class="btn btn-ghost" onclick="document.getElementById('importFile2').click()">⬆️ Importar desde JSON</button><input type="file" id="importFile2" accept=".json" style="display:none" onchange="importarDatos(event)"></div><p class="nota" style="margin-top:.8rem">Haz copias de seguridad periódicas. Guárdalas en local, no en GitHub.</p><hr class="separator"><h4>⚠️ Zona de peligro</h4><div class="btn-row"><button class="btn btn-danger btn-sm" onclick="borrarTodosLosDatos()">🗑 Borrar TODOS los datos</button></div></div>
+<div class="card"><h3>Información de seguridad</h3><div class="alert alert-info"><div><strong>Sistema 100% local.</strong> Tus datos se guardan solo en el localStorage de este navegador. Ningún dato se envía a ningún servidor.</div></div><div class="alert alert-warning"><div><strong>Haz copias de seguridad.</strong> El localStorage puede borrarse si limpias el navegador. Exporta tu JSON regularmente.</div></div></div></div>
 </main>
-
 <script>
-// ═══════════════════════════════════════════════════════════════
-// DATOS Y ESTADO
-// ═══════════════════════════════════════════════════════════════
-
-let facturas = [];
-let gastos = [];
-let estadosModelos = {};
-let config = {};
-
-function cargarDatos() {
-  try { facturas = JSON.parse(localStorage.getItem('facturas_v2') || '[]'); } catch(e) { facturas = []; }
-  try { gastos = JSON.parse(localStorage.getItem('gastos_v2') || '[]'); } catch(e) { gastos = []; }
-  try { estadosModelos = JSON.parse(localStorage.getItem('estadosModelos_v2') || '{}'); } catch(e) { estadosModelos = {}; }
-  try { config = JSON.parse(localStorage.getItem('configAutonomo') || '{}'); } catch(e) { config = {}; }
+let facturas=[],gastos=[],estadosModelos={},config={};
+function cargarDatos(){
+  try{facturas=JSON.parse(localStorage.getItem('facturas_v2')||'[]');}catch(e){facturas=[];}
+  try{gastos=JSON.parse(localStorage.getItem('gastos_v2')||'[]');}catch(e){gastos=[];}
+  try{estadosModelos=JSON.parse(localStorage.getItem('estadosModelos_v2')||'{}');}catch(e){estadosModelos={};}
+  try{config=JSON.parse(localStorage.getItem('configAutonomo')||'{}');}catch(e){config={};}
 }
-
-function guardarEnStorage() {
-  localStorage.setItem('facturas_v2', JSON.stringify(facturas));
-  localStorage.setItem('gastos_v2', JSON.stringify(gastos));
-  localStorage.setItem('estadosModelos_v2', JSON.stringify(estadosModelos));
+function guardarEnStorage(){
+  localStorage.setItem('facturas_v2',JSON.stringify(facturas));
+  localStorage.setItem('gastos_v2',JSON.stringify(gastos));
+  localStorage.setItem('estadosModelos_v2',JSON.stringify(estadosModelos));
 }
-
-// ═══════════════════════════════════════════════════════════════
-// F1: CONFIGURACIÓN SIN DATOS EN CÓDIGO
-// ═══════════════════════════════════════════════════════════════
-
-function verificarConfiguracion() {
-  if (!config.nombre || !config.nif) {
-    document.getElementById('setupModal').classList.add('active');
-  } else {
-    actualizarHeaderInfo();
-    cargarFormularioConfig();
-  }
+function verificarConfiguracion(){
+  if(!config.nombre||!config.nif)document.getElementById('setupModal').classList.add('active');
+  else{actualizarHeaderInfo();cargarFormularioConfig();}
 }
-
-function guardarConfiguracion() {
-  const nombre = document.getElementById('cfg-nombre').value.trim();
-  const nif = document.getElementById('cfg-nif').value.trim();
-  const actividad = document.getElementById('cfg-actividad').value.trim();
-  if (!nombre || !nif || !actividad) {
-    alert('Por favor rellena al menos nombre, NIF y actividad.'); return;
-  }
-  config = {
-    nombre, nif,
-    alta: document.getElementById('cfg-alta').value,
-    actividad,
-    epigrafe: document.getElementById('cfg-epigrafe').value.trim(),
-    regimen: document.getElementById('cfg-regimen').value,
-    direccion: document.getElementById('cfg-direccion').value.trim(),
-    municipio: document.getElementById('cfg-municipio').value.trim(),
-    cp: document.getElementById('cfg-cp').value.trim(),
-    provincia: document.getElementById('cfg-provincia').value.trim()
-  };
-  localStorage.setItem('configAutonomo', JSON.stringify(config));
+function guardarConfiguracion(){
+  const n=document.getElementById('cfg-nombre').value.trim(),i=document.getElementById('cfg-nif').value.trim();
+  if(!n||!i){alert('Nombre y NIF obligatorios');return;}
+  config={nombre:n,nif:i,alta:document.getElementById('cfg-alta').value,actividad:document.getElementById('cfg-actividad').value.trim(),epigrafe:document.getElementById('cfg-epigrafe').value.trim(),regimen:document.getElementById('cfg-regimen').value,direccion:document.getElementById('cfg-direccion').value.trim(),municipio:document.getElementById('cfg-municipio').value.trim(),cp:document.getElementById('cfg-cp').value.trim(),provincia:document.getElementById('cfg-provincia').value.trim()};
+  localStorage.setItem('configAutonomo',JSON.stringify(config));
   document.getElementById('setupModal').classList.remove('active');
-  actualizarHeaderInfo();
-  cargarFormularioConfig();
-  renderDashboard();
+  actualizarHeaderInfo();cargarFormularioConfig();renderDashboard();
 }
-
-function actualizarConfiguracion() {
-  config = {
-    nombre: document.getElementById('util-nombre').value.trim(),
-    nif: document.getElementById('util-nif').value.trim(),
-    alta: document.getElementById('util-alta').value,
-    actividad: document.getElementById('util-actividad').value.trim(),
-    epigrafe: document.getElementById('util-epigrafe').value.trim(),
-    regimen: document.getElementById('util-regimen').value,
-    direccion: document.getElementById('util-direccion').value.trim(),
-    municipio: document.getElementById('util-municipio').value.trim(),
-    cp: document.getElementById('util-cp').value.trim(),
-    provincia: document.getElementById('util-provincia').value.trim()
-  };
-  localStorage.setItem('configAutonomo', JSON.stringify(config));
-  actualizarHeaderInfo();
-  alert('✅ Configuración guardada.');
+function actualizarConfiguracion(){
+  config={nombre:document.getElementById('util-nombre').value.trim(),nif:document.getElementById('util-nif').value.trim(),alta:document.getElementById('util-alta').value,actividad:document.getElementById('util-actividad').value.trim(),epigrafe:document.getElementById('util-epigrafe').value.trim(),regimen:document.getElementById('util-regimen').value,direccion:document.getElementById('util-direccion').value.trim(),municipio:document.getElementById('util-municipio').value.trim(),cp:document.getElementById('util-cp').value.trim(),provincia:document.getElementById('util-provincia').value.trim()};
+  localStorage.setItem('configAutonomo',JSON.stringify(config));
+  actualizarHeaderInfo();alert('✅ Configuración guardada.');
 }
-
-function limpiarConfiguracion() {
-  if (confirm('¿Limpiar tu configuración? Tendrás que volver a introducir tus datos.')) {
-    localStorage.removeItem('configAutonomo');
-    config = {};
-    document.getElementById('setupModal').classList.add('active');
-  }
+function limpiarConfiguracion(){if(confirm('¿Limpiar configuración?')){localStorage.removeItem('configAutonomo');config={};document.getElementById('setupModal').classList.add('active');}}
+function actualizarHeaderInfo(){document.getElementById('headerInfo').textContent=config.nombre?`${config.nombre} · NIF: ${config.nif} · ${config.actividad||''}`:'Sin configurar';}
+function cargarFormularioConfig(){const c=['nombre','nif','alta','actividad','epigrafe','regimen','direccion','municipio','cp','provincia'];c.forEach(f=>{const e=document.getElementById('util-'+f);if(e&&config[f])e.value=config[f];});}
+function cambiarTab(e,t){
+  document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(e&&e.currentTarget)e.currentTarget.classList.add('active');
+  if(t==='modelo303')calcularModelo303();
+  if(t==='modelo130')calcularModelo130();
+  if(t==='modelo190')calcularModelo190();
+  if(t==='modelo349')calcularModelo349();
+  if(t==='autonomos')renderTramosAutonomos();
+  if(t==='dashboard')renderDashboard();
 }
-
-function actualizarHeaderInfo() {
-  document.getElementById('headerInfo').textContent = config.nombre 
-    ? `${config.nombre} · NIF: ${config.nif} · ${config.actividad || ''}`
-    : 'Sin configurar';
+function calcularVencimientosTrimestres(y){
+  const h=new Date();h.setHours(0,0,0,0);
+  return [
+    {t:`4T ${y-1}`,m:['303','130','349','190'],f:new Date(y,0,20),l:`4T${y-1}`},
+    {t:`1T ${y}`,m:['303','130','349'],f:new Date(y,3,20),l:`1T${y}`},
+    {t:`2T ${y}`,m:['303','130','349'],f:new Date(y,6,20),l:`2T${y}`},
+    {t:`3T ${y}`,m:['303','130','349'],f:new Date(y,9,20),l:`3T${y}`},
+  ].map(v=>({
+    ...v,
+    presentado:estadosModelos[`${v.t}_presentado`],
+    pasado:v.f<h,
+    proximo:!estadosModelos[`${v.t}_presentado`]&&v.f>=h&&(v.f-h)<30*86400000
+  }));
 }
-
-function cargarFormularioConfig() {
-  const campos = ['nombre','nif','alta','actividad','epigrafe','regimen','direccion','municipio','cp','provincia'];
-  campos.forEach(c => {
-    const el = document.getElementById('util-' + c);
-    if (el && config[c]) el.value = config[c];
-  });
+function renderDashboard(){
+  const y=new Date().getFullYear();document.getElementById('dash-anyo').textContent=y;
+  const fA=facturas.filter(f=>f.estado!=='anulada'&&getAnyo(f.fecha)===y),gA=gastos.filter(g=>getAnyo(g.fecha)===y);
+  const i=fA.reduce((s,f)=>s+parseFloat(f.base||0),0),g=gA.reduce((s,g)=>s+parseFloat(g.baseDeducible||g.base||0),0);
+  const ivaR=fA.filter(f=>f.pais==='ES').reduce((s,f)=>s+parseFloat(f.iva||0),0),ivaS=gA.reduce((s,g)=>s+parseFloat(g.ivaSoportado||0),0);
+  document.getElementById('dash-grid').innerHTML=`<div class="dash-card"><div class="label">Ingresos ${y}</div><div class="value green">${fmt(i)} €</div></div><div class="dash-card"><div class="label">Gastos deducibles</div><div class="value red">${fmt(g)} €</div></div><div class="dash-card"><div class="label">Beneficio</div><div class="value ${i-g>=0?'green':'red'}">${fmt(i-g)} €</div></div><div class="dash-card"><div class="label">Saldo IVA</div><div class="value ${ivaR-ivaS>=0?'yellow':'green'}">${fmt(ivaR-ivaS)} €</div></div>`;
+  const v=calcularVencimientosTrimestres(y);
+  document.getElementById('venc-grid').innerHTML=v.map(x=>`<div class="venc-card ${x.presentado?'presentado':x.pasado?'pasado':x.proximo?'proximo':'futuro'}"><div class="venc-title">${x.t}</div><div class="venc-fecha">📅 ${x.f.toLocaleDateString()}</div><div class="venc-estado ${x.presentado?'badge-presentado':x.pasado?'badge-pasado':x.proximo?'badge-pendiente':'badge-futuro'}">${x.presentado?'Presentado':x.pasado?'Sin presentar':x.proximo?'Próximo':'Pendiente'}</div></div>`).join('');
+  const ue=facturas.some(f=>f.pais==='EU'&&f.estado!=='anulada');
+  document.getElementById('btn-tab-349').style.display=ue?'inline-block':'none';
 }
-
-// ═══════════════════════════════════════════════════════════════
-// NAVEGACIÓN TABS (F6 fix: recibe event como parámetro)
-// ═══════════════════════════════════════════════════════════════
-
-function cambiarTab(event, tabId) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tabId).classList.add('active');
-  if (event && event.currentTarget) event.currentTarget.classList.add('active');
-  // Recalcular si es un modelo
-  if (tabId === 'modelo303') calcularModelo303();
-  if (tabId === 'modelo130') calcularModelo130();
-  if (tabId === 'modelo349') calcularModelo349();
-  if (tabId === 'autonomos') renderTramosAutonomos();
-  if (tabId === 'dashboard') renderDashboard();
+function generarNumFactura(){const y=new Date().getFullYear(),f=facturas.filter(x=>x.num&&x.num.startsWith(y+'/')),u=f.length?Math.max(...f.map(x=>parseInt(x.num.split('/')[1]))):0;return `${y}/${String(u+1).padStart(3,'0')}`;}
+function calcularTotalesFac(){
+  const b=parseFloat(document.getElementById('fac-base').value)||0,p=parseFloat(document.getElementById('fac-iva-pct').value)||0,r=parseFloat(document.getElementById('fac-irpf-pct').value)||0;
+  const i=round2(b*p/100),ret=round2(b*r/100),t=round2(b+i-ret);
+  const res=document.getElementById('fac-resumen-calc');if(b>0){res.style.display='block';document.getElementById('fac-calc-lines').innerHTML=`Base: ${fmt(b)} € | IVA: ${fmt(i)} € | IRPF: ${fmt(ret)} € | Total: ${fmt(t)} €`;}else res.style.display='none';
 }
-
-// ═══════════════════════════════════════════════════════════════
-// F2: VENCIMIENTOS FISCALES DINÁMICOS
-// ═══════════════════════════════════════════════════════════════
-
-function calcularVencimientosTrimestres(anyo) {
-  const vencimientos = [
-    { trimestre: '4T ' + (anyo-1), mod: ['303','130','349'], fecha: new Date(anyo, 0, 20), label: `4T${anyo-1} — 20 enero ${anyo}` },
-    { trimestre: '1T ' + anyo,    mod: ['303','130','349'], fecha: new Date(anyo, 3, 20), label: `1T${anyo} — 20 abril ${anyo}` },
-    { trimestre: '2T ' + anyo,    mod: ['303','130','349'], fecha: new Date(anyo, 6, 20), label: `2T${anyo} — 20 julio ${anyo}` },
-    { trimestre: '3T ' + anyo,    mod: ['303','130','349'], fecha: new Date(anyo, 9, 20), label: `3T${anyo} — 20 octubre ${anyo}` },
-  ];
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  vencimientos.forEach(v => {
-    const clave = `${v.trimestre}_${v.mod.join('_')}`;
-    v.presentado = estadosModelos[clave] === 'presentado';
-    v.pasado = v.fecha < hoy;
-    v.proximo = !v.presentado && !v.pasado && (v.fecha - hoy) < 30 * 86400000;
-  });
-  return vencimientos;
+function editarFactura(id){
+  const f=facturas.find(x=>x.id===id);if(!f)return;
+  document.getElementById('fac-edit-id').value=f.id;
+  document.getElementById('fac-num').value=f.num;document.getElementById('fac-fecha').value=f.fecha;
+  document.getElementById('fac-cliente').value=f.cliente;document.getElementById('fac-pais').value=f.pais;
+  document.getElementById('fac-nif-cliente').value=f.nifCliente||'';document.getElementById('fac-concepto').value=f.concepto;
+  document.getElementById('fac-tipo').value=f.tipo;document.getElementById('fac-base').value=f.base;
+  document.getElementById('fac-iva-pct').value=f.ivaPct;document.getElementById('fac-irpf-pct').value=f.irpfPct;
+  document.getElementById('fac-metodo').value=f.metodo;document.getElementById('fac-estado').value=f.estado;
+  document.getElementById('fac-form-title').textContent='✏️ Editar factura';
+  document.getElementById('fac-edit-banner').classList.add('visible');
+  actualizarIvaLabel();calcularTotalesFac();window.scrollTo({top:0,behavior:'smooth'});
 }
-
-function proximoVencimiento() {
-  const anyo = new Date().getFullYear();
-  const todos = calcularVencimientosTrimestres(anyo);
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  return todos.find(v => !v.presentado && v.fecha >= hoy) || null;
+function guardarFactura(){
+  const id=document.getElementById('fac-edit-id').value,b=parseFloat(document.getElementById('fac-base').value),y=getAnyo(document.getElementById('fac-fecha').value);
+  const p=parseFloat(document.getElementById('fac-iva-pct').value),r=parseFloat(document.getElementById('fac-irpf-pct').value);
+  const f={id:id?parseInt(id):Date.now(),num:document.getElementById('fac-num').value,fecha:document.getElementById('fac-fecha').value,cliente:document.getElementById('fac-cliente').value,nifCliente:document.getElementById('fac-nif-cliente').value,concepto:document.getElementById('fac-concepto').value,tipo:document.getElementById('fac-tipo').value,pais:document.getElementById('fac-pais').value,base:b,ivaPct:p,iva:round2(b*p/100),irpfPct:r,irpf:round2(b*r/100),total:round2(b+round2(b*p/100)-round2(b*r/100)),metodo:document.getElementById('fac-metodo').value,estado:document.getElementById('fac-estado').value};
+  if(!f.fecha||!f.cliente||isNaN(b))return alert('Datos incompletos');
+  if(id)facturas=facturas.map(x=>x.id===parseInt(id)?f:x);else facturas.push(f);
+  guardarEnStorage();limpiarFormFactura();renderFacturas();renderDashboard();
 }
-
-// ═══════════════════════════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════════════════════════
-
-function renderDashboard() {
-  const anyo = new Date().getFullYear();
-  document.getElementById('dash-anyo').textContent = anyo;
-
-  const facAnyo = facturas.filter(f => f.estado !== 'anulada' && getAnyo(f.fecha) === anyo);
-  const gasAnyo = gastos.filter(g => getAnyo(g.fecha) === anyo);
-
-  const totalIngresos = facAnyo.reduce((s,f) => s + parseFloat(f.base || 0), 0);
-  const totalGastos = gasAnyo.reduce((s,g) => s + parseFloat(g.baseDeducible || g.base || 0), 0);
-  const beneficio = totalIngresos - totalGastos;
-  const ivaRepercutido = facAnyo.filter(f => f.pais === 'ES').reduce((s,f) => s + parseFloat(f.iva || 0), 0);
-  const ivaSoportado = gasAnyo.reduce((s,g) => s + parseFloat(g.ivaSoportado || 0), 0);
-  const saldoIva = ivaRepercutido - ivaSoportado;
-  const retenciones = facAnyo.reduce((s,f) => s + parseFloat(f.irpf || 0), 0);
-
-  document.getElementById('dash-grid').innerHTML = `
-    <div class="dash-card"><div class="label">Ingresos ${anyo}</div><div class="value green">${fmt(totalIngresos)} €</div><div class="sub">${facAnyo.length} facturas</div></div>
-    <div class="dash-card"><div class="label">Gastos deducibles ${anyo}</div><div class="value red">${fmt(totalGastos)} €</div></div>
-    <div class="dash-card"><div class="label">Beneficio neto ${anyo}</div><div class="value ${beneficio>=0?'green':'red'}">${fmt(beneficio)} €</div></div>
-    <div class="dash-card"><div class="label">Saldo IVA (a pagar/devolver)</div><div class="value ${saldoIva>=0?'yellow':'green'}">${fmt(saldoIva)} €</div></div>
-    <div class="dash-card"><div class="label">Retenciones IRPF cobradas</div><div class="value blue">${fmt(retenciones)} €</div></div>
-  `;
-
-  // Vencimientos
-  const venc = calcularVencimientosTrimestres(anyo);
-  document.getElementById('venc-grid').innerHTML = venc.map(v => {
-    let cls = 'futuro', badgeCls = 'badge-futuro', badgeTxt = 'Próximo';
-    if (v.presentado) { cls = 'presentado'; badgeCls = 'badge-presentado'; badgeTxt = '✅ Presentado'; }
-    else if (v.pasado) { cls = 'pasado'; badgeCls = 'badge-pasado'; badgeTxt = '⚠️ Sin presentar'; }
-    else if (v.proximo) { cls = 'proximo'; badgeCls = 'badge-pendiente'; badgeTxt = '🔔 Menos de 30 días'; }
-    return `<div class="venc-card ${cls}">
-      <div class="venc-title">${v.trimestre}</div>
-      <div class="venc-fecha">📅 ${v.fecha.toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})}</div>
-      <div class="venc-fecha">Modelos: ${v.mod.join(', ')}</div>
-      <div><span class="venc-estado ${badgeCls}">${badgeTxt}</span></div>
-    </div>`;
-  }).join('');
-
-  // Alertas
-  let alertas = '';
-  const pv = proximoVencimiento();
-  if (pv) {
-    const dias = Math.ceil((pv.fecha - new Date()) / 86400000);
-    alertas += `<div class="alert ${dias<=10?'alert-danger':'alert-warning'}">📅 Próximo vencimiento: <strong>${pv.label}</strong> — en ${dias} días</div>`;
-  }
-  document.getElementById('alertas-dashboard').innerHTML = alertas;
+function limpiarFormFactura(){
+  document.getElementById('fac-edit-id').value='';document.getElementById('fac-form-title').textContent='➕ Nueva factura';
+  document.getElementById('fac-edit-banner').classList.remove('visible');
+  ['fac-num','fac-cliente','fac-nif-cliente','fac-concepto','fac-base'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('fac-fecha').value=hoyISO();document.getElementById('fac-num').value=generarNumFactura();
+  document.getElementById('fac-iva-pct').value='21';document.getElementById('fac-irpf-pct').value='0';
+  document.getElementById('fac-pais').value='ES';document.getElementById('fac-estado').value='cobrada';
+  actualizarIvaLabel();calcularTotalesFac();
 }
-
-// ═══════════════════════════════════════════════════════════════
-// FACTURAS
-// ═══════════════════════════════════════════════════════════════
-
-function generarNumFactura() {
-  const anyo = new Date().getFullYear();
-  const facAnyo = facturas.filter(f => getAnyo(f.fecha) === anyo || (f.num && f.num.startsWith(anyo+'/')) );
-  const ultimo = facAnyo.length ? Math.max(...facAnyo.map(f => {
-    const p = (f.num || '').split('/'); return p[1] ? parseInt(p[1]) : 0;
-  })) : 0;
-  return `${anyo}/${String(ultimo+1).padStart(3,'0')}`;
+function editarGasto(id){
+  const g=gastos.find(x=>x.id===id);if(!g)return;
+  document.getElementById('gas-edit-id').value=g.id;
+  document.getElementById('gas-fecha').value=g.fecha;document.getElementById('gas-proveedor').value=g.proveedor;
+  document.getElementById('gas-categoria').value=g.categoria;document.getElementById('gas-total').value=g.total;
+  document.getElementById('gas-iva-pct').value=g.ivaPct;document.getElementById('gas-nfactura').value=g.nfactura||'';
+  document.getElementById('gas-deducible').value=g.deduciblePct;document.getElementById('gas-notas').value=g.notas||'';
+  document.getElementById('gas-form-title').textContent='✏️ Editar gasto';
+  document.getElementById('gas-edit-banner').classList.add('visible');
+  calcularGastoBase();window.scrollTo({top:0,behavior:'smooth'});
 }
-
-function normalizarNumFac() {
-  const v = document.getElementById('fac-num').value;
-  const anyo = new Date().getFullYear();
-  // Validación: si cambia de año, avisar
-  if (v && v.includes('/')) {
-    const parts = v.split('/');
-    if (parseInt(parts[0]) !== anyo) {
-      document.getElementById('fac-aviso-regimen').style.display = 'block';
-      document.getElementById('fac-aviso-regimen').innerHTML = `<strong>Aviso:</strong> El número de factura pertenece a un año diferente al actual (${anyo}). Asegúrate de que sea correcto.`;
-    } else {
-      document.getElementById('fac-aviso-regimen').style.display = 'none';
-    }
-  }
+function guardarGasto(){
+  const id=document.getElementById('gas-edit-id').value,t=parseFloat(document.getElementById('gas-total').value),p=parseFloat(document.getElementById('gas-iva-pct').value),d=parseInt(document.getElementById('gas-deducible').value);
+  const b=round2(t/(1+p/100)),i=round2(t-b);
+  const g={id:id?parseInt(id):Date.now(),fecha:document.getElementById('gas-fecha').value,proveedor:document.getElementById('gas-proveedor').value,categoria:document.getElementById('gas-categoria').value,total:t,ivaPct:p,base:b,iva:i,deduciblePct:d,baseDeducible:round2(b*d/100),ivaSoportado:round2(i*d/100),nfactura:document.getElementById('gas-nfactura').value,notas:document.getElementById('gas-notas').value};
+  if(!g.fecha||!g.proveedor||isNaN(t))return alert('Datos incompletos');
+  if(id)gastos=gastos.map(x=>x.id===parseInt(id)?g:x);else gastos.push(g);
+  guardarEnStorage();limpiarFormGasto();renderGastos();renderDashboard();
 }
-
-function actualizarIvaLabel() {
-  const pais = document.getElementById('fac-pais').value;
-  const sel = document.getElementById('fac-iva-pct');
-  const label = document.getElementById('fac-iva-label');
-  const avisoEl = document.getElementById('fac-aviso-regimen');
-  if (pais === 'EU') {
-    sel.value = '0'; label.textContent = 'IVA (%)';
-    avisoEl.style.display = 'block';
-    avisoEl.innerHTML = '🇪🇺 <strong>Inversión del sujeto pasivo (UE):</strong> No repercutes IVA, pero debes declararlo en el Mod. 303 (casillas 10-11) y presentar el <strong>Mod. 349</strong>.';
-  } else if (pais === 'EX') {
-    sel.value = '0'; label.textContent = 'IVA (%)';
-    avisoEl.style.display = 'block';
-    avisoEl.innerHTML = '🌍 <strong>Exportación extracomunitaria:</strong> Operación exenta de IVA (art. 21 LIVA). No presentas Mod. 349 por esto.';
-  } else {
-    label.textContent = 'IVA (%)';
-    avisoEl.style.display = 'none';
-  }
-  calcularTotalesFac();
+function limpiarFormGasto(){
+  document.getElementById('gas-edit-id').value='';document.getElementById('gas-form-title').textContent='➕ Nuevo gasto';
+  document.getElementById('gas-edit-banner').classList.remove('visible');
+  ['gas-proveedor','gas-total','gas-nfactura','gas-notas'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('gas-fecha').value=hoyISO();document.getElementById('gas-iva-pct').value='21';
+  document.getElementById('gas-deducible').value='100';document.getElementById('gas-base').value='';
 }
-
-function calcularTotalesFac() {
-  const base = parseFloat(document.getElementById('fac-base').value) || 0;
-  const ivaPct = parseFloat(document.getElementById('fac-iva-pct').value) || 0;
-  const irpfPct = parseFloat(document.getElementById('fac-irpf-pct').value) || 0;
-  const iva = round2(base * ivaPct / 100);
-  const irpf = round2(base * irpfPct / 100);
-  const total = round2(base + iva - irpf);
-  const resEl = document.getElementById('fac-resumen-calc');
-  const linesEl = document.getElementById('fac-calc-lines');
-  if (base > 0) {
-    resEl.style.display = 'block';
-    linesEl.innerHTML = `
-      <div style="display:flex;justify-content:space-between"><span>Base imponible:</span><span>${fmt(base)} €</span></div>
-      <div style="display:flex;justify-content:space-between"><span>IVA (${ivaPct}%):</span><span>+ ${fmt(iva)} €</span></div>
-      ${irpfPct>0?`<div style="display:flex;justify-content:space-between;color:var(--yellow)"><span>Retención IRPF (${irpfPct}%):</span><span>– ${fmt(irpf)} €</span></div>`:''}
-      <div style="display:flex;justify-content:space-between;font-weight:700;margin-top:.4rem;border-top:1px solid var(--border);padding-top:.4rem"><span>Total a cobrar:</span><span>${fmt(total)} €</span></div>`;
-  } else {
-    resEl.style.display = 'none';
-  }
+function repararDatosMigrados(){
+  let c=0;facturas.forEach(f=>{if(f.pais==='ES' && f.base>0 && (f.iva===0||!f.iva)){f.iva=round2(f.base*f.ivaPct/100);f.total=round2(f.base+f.iva-f.irpf);c++;}});
+  guardarEnStorage();renderFacturas();renderDashboard();
+  document.getElementById('reparacion-resultado').innerHTML=`<div class="alert alert-success">Recalculadas ${c} facturas. Revisa el dashboard.</div>`;
 }
-
-function guardarFactura() {
-  const num = document.getElementById('fac-num').value.trim() || generarNumFactura();
-  const fecha = document.getElementById('fac-fecha').value;
-  const cliente = document.getElementById('fac-cliente').value.trim();
-  const concepto = document.getElementById('fac-concepto').value.trim();
-  const base = parseFloat(document.getElementById('fac-base').value);
-  if (!fecha || !cliente || !concepto || isNaN(base) || base < 0) {
-    alert('Por favor rellena fecha, cliente, concepto e importe.'); return;
-  }
-  // Validar número único por año
-  const anyoFac = getAnyo(fecha);
-  const numDuplicado = facturas.find(f => f.num === num && f.num);
-  if (numDuplicado) { alert(`Ya existe una factura con el número ${num}. Usa un número diferente.`); return; }
-
-  const ivaPct = parseFloat(document.getElementById('fac-iva-pct').value) || 0;
-  const irpfPct = parseFloat(document.getElementById('fac-irpf-pct').value) || 0;
-  const pais = document.getElementById('fac-pais').value;
-  const iva = round2(base * ivaPct / 100);
-  const irpf = round2(base * irpfPct / 100);
-  const total = round2(base + iva - irpf);
-
-  const factura = {
-    id: Date.now(), num, fecha, cliente,
-    nifCliente: document.getElementById('fac-nif-cliente').value.trim(),
-    concepto, tipo: document.getElementById('fac-tipo').value,
-    pais, base, ivaPct, iva, irpfPct, irpf, total,
-    metodo: document.getElementById('fac-metodo').value,
-    estado: document.getElementById('fac-estado').value
-  };
-  facturas.push(factura);
-  guardarEnStorage();
-  limpiarFormFactura();
-  renderFacturas();
-  renderDashboard();
-  alert(`✅ Factura ${num} guardada.`);
+function calcularModelo190(){
+  const y=parseInt(document.getElementById('m190-anyo').value),fA=facturas.filter(f=>f.estado==='cobrada'&&getAnyo(f.fecha)===y&&f.irpf>0);
+  const t=fA.reduce((s,f)=>s+f.irpf,0);
+  document.getElementById('m190-contenido').innerHTML=`<div class="dash-card"><div class="label">Total retenciones recibidas ${y}</div><div class="value blue">${fmt(t)} €</div></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Base</th><th>Retención (IRPF)</th></tr></thead><tbody>${fA.map(f=>`<tr><td>${f.cliente}</td><td>${fmt(f.base)} €</td><td>${fmt(f.irpf)} €</td></tr>`).join('')}</tbody></table></div>`;
 }
-
-function limpiarFormFactura() {
-  ['fac-num','fac-fecha','fac-cliente','fac-nif-cliente','fac-concepto','fac-base'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('fac-iva-pct').value = '21';
-  document.getElementById('fac-irpf-pct').value = '0';
-  document.getElementById('fac-pais').value = 'ES';
-  document.getElementById('fac-estado').value = 'cobrada';
-  document.getElementById('fac-resumen-calc').style.display = 'none';
-  document.getElementById('fac-aviso-regimen').style.display = 'none';
-  // Proponer siguiente número
-  document.getElementById('fac-num').value = generarNumFactura();
-  // Fecha de hoy
-  document.getElementById('fac-fecha').value = hoyISO();
+function fmt(n){return parseFloat(n||0).toLocaleString('es-ES',{minFD:2,maxFD:2});}
+function round2(n){return Math.round(n*100)/100;}
+function hoyISO(){return new Date().toISOString().split('T')[0];}
+function getAnyo(f){return f?parseInt(f.split('-')[0]):0;}
+function getTrimestre(f){if(!f)return 0;const m=parseInt(f.split('-')[1]);return Math.ceil(m/3);}
+function formatFecha(f){if(!f)return '';const[y,m,d]=f.split('-');return `${d}/${m}/${y}`;}
+function renderFacturas(){
+  const t=document.getElementById('tabla-facturas');
+  t.innerHTML=facturas.map(f=>`<tr><td>${f.num}</td><td>${formatFecha(f.fecha)}</td><td>${f.cliente}</td><td class="green">${fmt(f.base)} €</td><td>${fmt(f.iva)} €</td><td>${fmt(f.irpf)} €</td><td>${fmt(f.total)} €</td><td><span class="tag tag-${f.estado==='cobrada'?'green':'yellow'}">${f.estado}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editarFactura(${f.id})">✏️</button></td></tr>`).join('');
 }
-
-function eliminarFactura(id) {
-  if (!confirm('¿Eliminar esta factura?')) return;
-  facturas = facturas.filter(f => f.id !== id);
-  guardarEnStorage(); renderFacturas(); renderDashboard();
+function renderGastos(){
+  const t=document.getElementById('tabla-gastos');
+  t.innerHTML=gastos.map(g=>`<tr><td>${formatFecha(g.fecha)}</td><td>${g.proveedor}</td><td>${g.categoria}</td><td>${fmt(g.base)} €</td><td>${fmt(g.iva)} €</td><td>${fmt(g.total)} €</td><td>${g.deduciblePct}%</td><td><button class="btn btn-ghost btn-sm" onclick="editarGasto(${g.id})">✏️</button></td></tr>`).join('');
 }
-
-function renderFacturas() {
-  const filtroAnyo = document.getElementById('fac-filtro-anyo').value;
-  const filtroTrim = document.getElementById('fac-filtro-trim').value;
-  const filtroEst = document.getElementById('fac-filtro-estado').value;
-
-  // Poblar selector de años
-  const anyos = [...new Set(facturas.map(f => getAnyo(f.fecha)))].sort((a,b)=>b-a);
-  const selAnyo = document.getElementById('fac-filtro-anyo');
-  const currentVal = selAnyo.value;
-  selAnyo.innerHTML = '<option value="todos">Todos</option>' + anyos.map(a=>`<option value="${a}">${a}</option>`).join('');
-  selAnyo.value = currentVal;
-
-  let lista = [...facturas];
-  if (filtroAnyo !== 'todos') lista = lista.filter(f => getAnyo(f.fecha) === parseInt(filtroAnyo));
-  if (filtroTrim !== 'todos') lista = lista.filter(f => getTrimestre(f.fecha) === parseInt(filtroTrim));
-  if (filtroEst !== 'todos') lista = lista.filter(f => f.estado === filtroEst);
-  lista.sort((a,b) => b.fecha.localeCompare(a.fecha));
-
-  const tbody = document.getElementById('tabla-facturas');
-  tbody.innerHTML = lista.map(f => `
-    <tr>
-      <td>${f.num || '–'}</td>
-      <td>${formatFecha(f.fecha)}</td>
-      <td>${esc(f.cliente)}</td>
-      <td class="green">${fmt(f.base)} €</td>
-      <td>${f.pais !== 'ES' ? '<span class="tag tag-blue">'+f.pais+'</span>' : fmt(f.iva)+' €'}</td>
-      <td>${f.irpf > 0 ? fmt(f.irpf)+' €' : '–'}</td>
-      <td style="font-weight:600">${fmt(f.total)} €</td>
-      <td><span class="tag ${f.estado==='cobrada'?'tag-green':f.estado==='anulada'?'tag-red':'tag-yellow'}">${f.estado}</span></td>
-      <td><button class="btn btn-ghost btn-sm" onclick="eliminarFactura(${f.id})">🗑</button></td>
-    </tr>`).join('') || '<tr><td colspan="9" style="color:var(--text2);text-align:center">Sin facturas en este periodo</td></tr>';
-
-  const totalBase = lista.filter(f=>f.estado!=='anulada').reduce((s,f)=>s+parseFloat(f.base||0),0);
-  const totalIva = lista.filter(f=>f.estado!=='anulada' && f.pais==='ES').reduce((s,f)=>s+parseFloat(f.iva||0),0);
-  document.getElementById('fac-totales').innerHTML = `Base total: <strong>${fmt(totalBase)} €</strong> · IVA repercutido: <strong>${fmt(totalIva)} €</strong>`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// GASTOS
-// ═══════════════════════════════════════════════════════════════
-
-function calcularGastoBase() {
-  const total = parseFloat(document.getElementById('gas-total').value) || 0;
-  const ivaPct = parseFloat(document.getElementById('gas-iva-pct').value) || 0;
-  const base = round2(total / (1 + ivaPct/100));
-  document.getElementById('gas-base').value = base.toFixed(2);
-}
-
-function mostrarAvisoCuotaAutonomos() {
-  const cat = document.getElementById('gas-categoria').value;
-  document.getElementById('gas-aviso-cuota').style.display = cat === 'cuota_autonomos' ? 'block' : 'none';
-}
-
-function guardarGasto() {
-  const fecha = document.getElementById('gas-fecha').value;
-  const proveedor = document.getElementById('gas-proveedor').value.trim();
-  const total = parseFloat(document.getElementById('gas-total').value);
-  if (!fecha || !proveedor || isNaN(total) || total < 0) {
-    alert('Por favor rellena fecha, proveedor e importe.'); return;
-  }
-  const ivaPct = parseFloat(document.getElementById('gas-iva-pct').value) || 0;
-  const base = round2(total / (1 + ivaPct/100));
-  const iva = round2(total - base);
-  const deduciblePct = parseInt(document.getElementById('gas-deducible').value);
-  const baseDeducible = round2(base * deduciblePct / 100);
-  const ivaSoportado = round2(iva * deduciblePct / 100);
-
-  gastos.push({
-    id: Date.now(), fecha, proveedor,
-    categoria: document.getElementById('gas-categoria').value,
-    total, ivaPct, base, iva, deduciblePct, baseDeducible, ivaSoportado,
-    nfactura: document.getElementById('gas-nfactura').value.trim(),
-    notas: document.getElementById('gas-notas').value.trim()
-  });
-  guardarEnStorage();
-  limpiarFormGasto();
-  renderGastos();
-  renderDashboard();
-  alert('✅ Gasto guardado.');
-}
-
-function limpiarFormGasto() {
-  ['gas-fecha','gas-proveedor','gas-total','gas-nfactura','gas-notas'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('gas-base').value = '';
-  document.getElementById('gas-iva-pct').value = '21';
-  document.getElementById('gas-deducible').value = '100';
-  document.getElementById('gas-fecha').value = hoyISO();
-  document.getElementById('gas-aviso-cuota').style.display = 'none';
-}
-
-function eliminarGasto(id) {
-  if (!confirm('¿Eliminar este gasto?')) return;
-  gastos = gastos.filter(g => g.id !== id);
-  guardarEnStorage(); renderGastos(); renderDashboard();
-}
-
-function renderGastos() {
-  const filtroAnyo = document.getElementById('gas-filtro-anyo').value;
-  const filtroTrim = document.getElementById('gas-filtro-trim').value;
-  const filtroCat = document.getElementById('gas-filtro-cat').value;
-
-  const anyos = [...new Set(gastos.map(g => getAnyo(g.fecha)))].sort((a,b)=>b-a);
-  const selA = document.getElementById('gas-filtro-anyo');
-  const cv = selA.value; selA.innerHTML = '<option value="todos">Todos</option>' + anyos.map(a=>`<option value="${a}">${a}</option>`).join(''); selA.value = cv;
-
-  const cats = [...new Set(gastos.map(g=>g.categoria))].sort();
-  const selC = document.getElementById('gas-filtro-cat');
-  const cvc = selC.value; selC.innerHTML = '<option value="todos">Todas</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join(''); selC.value = cvc;
-
-  let lista = [...gastos];
-  if (filtroAnyo !== 'todos') lista = lista.filter(g => getAnyo(g.fecha) === parseInt(filtroAnyo));
-  if (filtroTrim !== 'todos') lista = lista.filter(g => getTrimestre(g.fecha) === parseInt(filtroTrim));
-  if (filtroCat !== 'todos') lista = lista.filter(g => g.categoria === filtroCat);
-  lista.sort((a,b) => b.fecha.localeCompare(a.fecha));
-
-  const tbody = document.getElementById('tabla-gastos');
-  tbody.innerHTML = lista.map(g => `
-    <tr>
-      <td>${formatFecha(g.fecha)}</td>
-      <td>${esc(g.proveedor)}</td>
-      <td>${esc(g.categoria)}</td>
-      <td>${fmt(g.base)} €</td>
-      <td>${fmt(g.iva)} €</td>
-      <td>${fmt(g.total)} €</td>
-      <td>${g.deduciblePct}% → ${fmt(g.baseDeducible)} €</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="eliminarGasto(${g.id})">🗑</button></td>
-    </tr>`).join('') || '<tr><td colspan="8" style="color:var(--text2);text-align:center">Sin gastos en este periodo</td></tr>';
-
-  const totalDeducible = lista.reduce((s,g)=>s+parseFloat(g.baseDeducible||0),0);
-  const totalIva = lista.reduce((s,g)=>s+parseFloat(g.ivaSoportado||0),0);
-  document.getElementById('gas-totales').innerHTML = `Total deducible (base): <strong>${fmt(totalDeducible)} €</strong> · IVA soportado deducible: <strong>${fmt(totalIva)} €</strong>`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// F3: MODELO 303 — CON CASILLAS REALES
-// ═══════════════════════════════════════════════════════════════
-
-function calcularModelo303() {
-  const anyo = parseInt(document.getElementById('m303-anyo').value);
-  const trim = parseInt(document.getElementById('m303-trim').value);
-
-  const facsT = facturas.filter(f => f.estado !== 'anulada' && getAnyo(f.fecha) === anyo && getTrimestre(f.fecha) === trim);
-  const gasT = gastos.filter(g => getAnyo(g.fecha) === anyo && getTrimestre(g.fecha) === trim);
-
-  // IVA devengado por tipo
-  const facES = facsT.filter(f => f.pais === 'ES');
-  const facEU = facsT.filter(f => f.pais === 'EU'); // inversión sujeto pasivo
-
-  const base21 = facES.filter(f=>f.ivaPct===21).reduce((s,f)=>s+parseFloat(f.base||0),0);
-  const iva21  = round2(base21 * 0.21);
-  const base10 = facES.filter(f=>f.ivaPct===10).reduce((s,f)=>s+parseFloat(f.base||0),0);
-  const iva10  = round2(base10 * 0.10);
-  const base4  = facES.filter(f=>f.ivaPct===4).reduce((s,f)=>s+parseFloat(f.base||0),0);
-  const iva4   = round2(base4 * 0.04);
-  const baseEU = facEU.reduce((s,f)=>s+parseFloat(f.base||0),0);
-  const ivaEU  = round2(baseEU * 0.21); // IVA que debería haberse repercutido en inversión SP
-  const totalDevengado = round2(iva21 + iva10 + iva4 + ivaEU);
-
-  // IVA soportado deducible
-  const ivaDeducible = gasT.reduce((s,g)=>s+parseFloat(g.ivaSoportado||0),0);
-
-  const resultado = round2(totalDevengado - ivaDeducible);
-
-  // Alertas intracomunitario
-  let alertas = '';
-  if (facEU.length > 0) {
-    alertas += `<div class="alert alert-info">ℹ️ Tienes ${facEU.length} factura(s) a clientes UE (inversión sujeto pasivo). Se incluyen en casillas 10-11 del Mod. 303 y debes presentar también el <strong>Mod. 349</strong>.</div>`;
-  }
-  document.getElementById('m303-alertas').innerHTML = alertas;
-
-  // Render casillas
-  document.getElementById('m303-devengado').innerHTML = `
-    <div class="casilla-row"><span class="casilla-num">01</span><span>Base imponible tipo general (21%) — Operaciones interiores</span><span class="casilla-val">${fmt(base21)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">03</span><span>Cuota (21%)</span><span class="casilla-val green">${fmt(iva21)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">05</span><span>Base imponible tipo reducido (10%)</span><span class="casilla-val">${fmt(base10)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">07</span><span>Cuota (10%)</span><span class="casilla-val green">${fmt(iva10)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">09</span><span>Base imponible tipo superreducido (4%)</span><span class="casilla-val">${fmt(base4)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">11</span><span>Cuota (4%)</span><span class="casilla-val green">${fmt(iva4)} €</span></div>
-    ${baseEU > 0 ? `
-    <div class="casilla-row"><span class="casilla-num">10</span><span>Base imponible — adq. intracomunitarias / inv. sujeto pasivo</span><span class="casilla-val">${fmt(baseEU)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">11</span><span>Cuota — adq. intracomunitarias</span><span class="casilla-val green">${fmt(ivaEU)} €</span></div>
-    ` : ''}
-    <div class="casilla-row total-row"><span class="casilla-num">27</span><span><strong>Total IVA devengado</strong></span><span class="casilla-val">${fmt(totalDevengado)} €</span></div>`;
-
-  document.getElementById('m303-deducible').innerHTML = `
-    <div class="casilla-row"><span class="casilla-num">28</span><span>IVA soportado deducible en operaciones interiores corrientes</span><span class="casilla-val red">${fmt(ivaDeducible)} €</span></div>
-    ${baseEU > 0 ? `<div class="casilla-row"><span class="casilla-num">32</span><span>IVA deducible en adquisiciones intracomunitarias</span><span class="casilla-val red">${fmt(ivaEU)} €</span></div>` : ''}
-    <div class="casilla-row total-row"><span class="casilla-num">45</span><span><strong>Total IVA deducible</strong></span><span class="casilla-val">${fmt(baseEU > 0 ? ivaDeducible + ivaEU : ivaDeducible)} €</span></div>`;
-
-  const totalDeducible2 = baseEU > 0 ? round2(ivaDeducible + ivaEU) : ivaDeducible;
-  const resultadoFinal = round2(totalDevengado - totalDeducible2);
-
-  document.getElementById('m303-resultado').innerHTML = `
-    <div class="casilla-row"><span class="casilla-num">46</span><span>Resultado (Cas. 27 – Cas. 45)</span><span class="casilla-val ${resultadoFinal>=0?'yellow':'green'}">${fmt(resultadoFinal)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">65</span><span>% de tributación a la Administración del Estado</span><span class="casilla-val">100 %</span></div>
-    <div class="casilla-row total-row"><span class="casilla-num">71</span><span><strong>${resultadoFinal >= 0 ? '⚠️ A ingresar' : '✅ A compensar o devolver'}</strong></span><span class="casilla-val ${resultadoFinal>=0?'red':'green'}">${fmt(Math.abs(resultadoFinal))} €</span></div>`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// F4: MODELO 130 — ACUMULADO Y CASILLAS REALES
-// ═══════════════════════════════════════════════════════════════
-
-function calcularModelo130() {
-  const anyo = parseInt(document.getElementById('m130-anyo').value);
-  const trim = parseInt(document.getElementById('m130-trim').value);
-
-  // Acumulado desde enero hasta fin del trimestre (como exige Hacienda)
-  const facAcum = facturas.filter(f => f.estado !== 'anulada' && getAnyo(f.fecha) === anyo && getTrimestre(f.fecha) <= trim);
-  const gasAcum = gastos.filter(g => getAnyo(g.fecha) === anyo && getTrimestre(g.fecha) <= trim);
-
-  const ingresosAcum = facAcum.reduce((s,f) => s + parseFloat(f.base||0), 0);
-  const gastosAcum   = gasAcum.reduce((s,g) => s + parseFloat(g.baseDeducible||g.base||0), 0);
-  const rendimientoNeto = round2(ingresosAcum - gastosAcum);
-  const cuota20 = round2(Math.max(0, rendimientoNeto) * 0.20);
-
-  // Retenciones acumuladas del año
-  const retencionesAcum = facAcum.reduce((s,f) => s + parseFloat(f.irpf||0), 0);
-
-  // Pagos fraccionados anteriores del mismo año (suma de Mod.130 ya presentados)
-  const pagosAnteriores = Array.from({length: trim-1}, (_,i) => {
-    const clave = `M130_${anyo}_T${i+1}`;
-    return parseFloat(estadosModelos[clave + '_importe'] || 0);
-  }).reduce((s,v)=>s+v, 0);
-
-  const resultado = round2(cuota20 - retencionesAcum - pagosAnteriores);
-  const aPagar = Math.max(0, resultado);
-
-  // Verificar exención (>70% con retención)
-  const ingresosTotales = ingresosAcum;
-  const pctConRetencion = ingresosTotales > 0
-    ? facAcum.filter(f=>f.irpfPct > 0).reduce((s,f)=>s+parseFloat(f.base||0),0) / ingresosTotales * 100
-    : 0;
-
-  let alertas = '';
-  if (pctConRetencion >= 70) {
-    alertas += `<div class="alert alert-success">✅ <strong>Exento de presentar el Mod. 130 este trimestre:</strong> El ${pctConRetencion.toFixed(1)}% de tus ingresos acumulados ya llevan retención de IRPF (supera el 70% requerido). Puedes no presentarlo, aunque si quieres hacerlo voluntariamente es posible.</div>`;
-  } else if (pctConRetencion > 0) {
-    alertas += `<div class="alert alert-warning">ℹ️ El ${pctConRetencion.toFixed(1)}% de tus ingresos llevan retención. Para quedar exento necesitas llegar al 70%.</div>`;
-  }
-  document.getElementById('m130-alertas').innerHTML = alertas;
-
-  document.getElementById('m130-casillas').innerHTML = `
-    <div class="casilla-row"><span class="casilla-num">01</span><span>Ingresos acumulados desde el 1 de enero hasta fin de ${['','enero','junio','septiembre','diciembre'][trim]} (excl. IVA)</span><span class="casilla-val green">${fmt(ingresosAcum)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">02</span><span>Gastos deducibles acumulados del mismo periodo</span><span class="casilla-val red">${fmt(gastosAcum)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">03</span><span>Rendimiento neto acumulado (01 – 02)</span><span class="casilla-val ${rendimientoNeto>=0?'':'red'}">${fmt(rendimientoNeto)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">04</span><span>20% del rendimiento neto (base del pago fraccionado)</span><span class="casilla-val yellow">${fmt(cuota20)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">05</span><span>Retenciones e ingresos a cuenta soportados acumulados en el año</span><span class="casilla-val red">${fmt(retencionesAcum)} €</span></div>
-    <div class="casilla-row"><span class="casilla-num">07</span><span>Pagos fraccionados ingresados por el Mod. 130 en trimestres anteriores del año</span><span class="casilla-val red">${fmt(pagosAnteriores)} €</span></div>
-    <div class="casilla-row total-row"><span class="casilla-num">14</span><span><strong>${aPagar > 0 ? '⚠️ A ingresar' : '✅ Resultado negativo / cero (no se ingresa)'}</strong></span><span class="casilla-val ${aPagar>0?'red':'green'}">${fmt(aPagar)} €</span></div>
-    ${aPagar > 0 ? `<p class="nota" style="margin-top:.8rem">Guarda el importe ingresado (${fmt(aPagar)} €) para que se descuente automáticamente en trimestres posteriores.</p>` : ''}`;
-
-  // Guardar importe para descontar en trimestres siguientes
-  if (estadosModelos[`M130_${anyo}_T${trim}`] === 'presentado') {
-    estadosModelos[`M130_${anyo}_T${trim}_importe`] = aPagar;
-    guardarEnStorage();
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MODELO 349 — OPERACIONES INTRACOMUNITARIAS
-// ═══════════════════════════════════════════════════════════════
-
-function calcularModelo349() {
-  const anyo = parseInt(document.getElementById('m349-anyo').value);
-  const trim = parseInt(document.getElementById('m349-trim').value);
-  const facEU = facturas.filter(f => f.pais === 'EU' && getAnyo(f.fecha) === anyo && getTrimestre(f.fecha) === trim && f.estado !== 'anulada');
-
-  if (facEU.length === 0) {
-    document.getElementById('m349-contenido').innerHTML = '<div class="alert alert-success">✅ No tienes operaciones intracomunitarias este trimestre. <strong>No necesitas presentar el Mod. 349.</strong></div>';
-    return;
-  }
-
-  // Agrupar por cliente / NIF intracomunitario
-  const grupos = {};
-  facEU.forEach(f => {
-    const key = f.nifCliente || f.cliente;
-    if (!grupos[key]) grupos[key] = { cliente: f.cliente, nif: f.nifCliente, base: 0, facturas: 0 };
-    grupos[key].base += parseFloat(f.base||0);
-    grupos[key].facturas++;
-  });
-
-  const total = Object.values(grupos).reduce((s,g)=>s+g.base,0);
-
-  document.getElementById('m349-contenido').innerHTML = `
-    <div class="alert alert-warning">📋 Tienes operaciones intracomunitarias este trimestre. <strong>Debes presentar el Mod. 349.</strong></div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>NIF intracomunitario</th><th>Nombre / razón social</th><th>Clave operación</th><th>Base (€)</th></tr></thead>
-        <tbody>
-          ${Object.values(grupos).map(g=>`
-            <tr>
-              <td>${esc(g.nif || 'Sin NIF')}</td>
-              <td>${esc(g.cliente)}</td>
-              <td>S — Prestaciones de servicios</td>
-              <td>${fmt(g.base)} €</td>
-            </tr>`).join('')}
-          <tr style="font-weight:700;background:var(--surface2)"><td colspan="3">TOTAL</td><td>${fmt(total)} €</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="nota" style="margin-top:.8rem">Presenta el Mod. 349 en la sede electrónica de la AEAT. El plazo coincide con el del Mod. 303.</p>`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// F5: CUOTA AUTÓNOMOS — TRAMOS INGRESOS REALES 2025-2026
-// ═══════════════════════════════════════════════════════════════
-
-const TRAMOS_AUTONOMOS_2026 = [
-  { num:1,  desde:0,      hasta:670,    cuotaMin:200,  cuotaMax:260,  label:'≤ 670 €/mes' },
-  { num:2,  desde:670,    hasta:900,    cuotaMin:250,  cuotaMax:270,  label:'670 – 900 €/mes' },
-  { num:3,  desde:900,    hasta:1166.7, cuotaMin:267,  cuotaMax:294,  label:'900 – 1.166 €/mes' },
-  { num:4,  desde:1166.7, hasta:1300,   cuotaMin:291,  cuotaMax:340,  label:'1.166 – 1.300 €/mes' },
-  { num:5,  desde:1300,   hasta:1500,   cuotaMin:294,  cuotaMax:350,  label:'1.300 – 1.500 €/mes' },
-  { num:6,  desde:1500,   hasta:1700,   cuotaMin:294,  cuotaMax:370,  label:'1.500 – 1.700 €/mes' },
-  { num:7,  desde:1700,   hasta:1850,   cuotaMin:310,  cuotaMax:390,  label:'1.700 – 1.850 €/mes' },
-  { num:8,  desde:1850,   hasta:2030,   cuotaMin:315,  cuotaMax:420,  label:'1.850 – 2.030 €/mes' },
-  { num:9,  desde:2030,   hasta:2330,   cuotaMin:320,  cuotaMax:445,  label:'2.030 – 2.330 €/mes' },
-  { num:10, desde:2330,   hasta:2760,   cuotaMin:330,  cuotaMax:505,  label:'2.330 – 2.760 €/mes' },
-  { num:11, desde:2760,   hasta:3190,   cuotaMin:340,  cuotaMax:535,  label:'2.760 – 3.190 €/mes' },
-  { num:12, desde:3190,   hasta:3620,   cuotaMin:350,  cuotaMax:570,  label:'3.190 – 3.620 €/mes' },
-  { num:13, desde:3620,   hasta:4050,   cuotaMin:360,  cuotaMax:630,  label:'3.620 – 4.050 €/mes' },
-  { num:14, desde:4050,   hasta:6000,   cuotaMin:370,  cuotaMax:720,  label:'4.050 – 6.000 €/mes' },
-  { num:15, desde:6000,   hasta:Infinity,cuotaMin:390, cuotaMax:1267, label:'> 6.000 €/mes' },
-];
-
-function renderTramosAutonomos() {
-  document.getElementById('tramo-grid').innerHTML = TRAMOS_AUTONOMOS_2026.map(t => `
-    <div class="tramo-card" id="tramo-${t.num}">
-      <div class="tramo-titulo">Tramo ${t.num}: ${t.label}</div>
-      <div class="tramo-cuota">Mín. ${t.cuotaMin} €/mes · Máx. ${t.cuotaMax} €/mes</div>
-    </div>`).join('');
-}
-
-function calcularCuotaAutonomos() {
-  const rendAnual = parseFloat(document.getElementById('aut-rendimiento').value) || 0;
-  const rendMensual = rendAnual / 12;
-
-  const tramo = TRAMOS_AUTONOMOS_2026.find(t => rendMensual >= t.desde && rendMensual < t.hasta) || TRAMOS_AUTONOMOS_2026[0];
-
-  document.getElementById('aut-tramo-activo').innerHTML = `
-    <div class="alert alert-info">
-      <div>
-        <strong>Tu tramo estimado: Tramo ${tramo.num}</strong> (${tramo.label})<br>
-        Cuota mínima: <strong>${tramo.cuotaMin} €/mes</strong> · Cuota máxima: ${tramo.cuotaMax} €/mes<br>
-        Cuota anual mínima estimada: <strong>${tramo.cuotaMin * 12} €</strong>
-      </div>
-    </div>`;
-
-  let alertas = '';
-  if (rendAnual < 6000) {
-    alertas += `<div class="alert alert-warning">📉 Tus ingresos son bajos. Recuerda que puedes solicitar cambio de tramo a la TGSS hasta 6 veces al año si tus ingresos varían. Hazlo antes de que empiece el mes en que cambia tu situación.</div>`;
-  }
-  if (rendAnual < 4800) {
-    alertas += `<div class="alert alert-info">ℹ️ Con ingresos inferiores a 4.800 €/año podrías estar en la tarifa plana de inicio de actividad (30 €/mes durante 12 meses, prorrogable a 24) si te diste de alta recientemente. Consulta con la TGSS.</div>`;
-  }
-  document.getElementById('aut-alertas').innerHTML = alertas;
-
-  // Destacar tramo en la tabla
-  document.querySelectorAll('.tramo-card').forEach(c => c.classList.remove('activo'));
-  const el = document.getElementById('tramo-' + tramo.num);
-  if (el) { el.classList.add('activo'); el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MARCAR PRESENTADO
-// ═══════════════════════════════════════════════════════════════
-
-function marcarPresentado(modelo) {
-  const anyo = parseInt(document.getElementById(`m${modelo}-anyo`).value);
-  const trim  = parseInt(document.getElementById(`m${modelo}-trim`).value);
-  const clave = `M${modelo}_${anyo}_T${trim}`;
-  estadosModelos[clave] = 'presentado';
-
-  // Si es 130, guardar importe
-  if (modelo === '130') {
-    const casEl = document.getElementById('m130-casillas');
-    // el importe ya se guarda en calcularModelo130 al recalcular
-    calcularModelo130();
-    estadosModelos[`${clave}_importe`] = parseFloat(
-      document.getElementById('m130-casillas').querySelector('.total-row .casilla-val')?.textContent?.replace(/[^0-9,.]/g,'').replace(',','.') || 0
-    );
-  }
-  guardarEnStorage();
-  renderDashboard();
-  alert(`✅ Modelo ${modelo} — ${trim}T ${anyo} marcado como presentado.`);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// EXPORT / IMPORT
-// ═══════════════════════════════════════════════════════════════
-
-function exportarDatos() {
-  const data = { facturas, gastos, estadosModelos, exportadoEl: new Date().toISOString(), version: '2.0' };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = `gestion-fiscal-backup-${hoyISO()}.json`;
-  a.click(); URL.revokeObjectURL(url);
-}
-
-function importarDatos(event) {
-  const file = event.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!confirm(`¿Importar ${(data.facturas||[]).length} facturas y ${(data.gastos||[]).length} gastos? Esto reemplazará los datos actuales.`)) return;
-      facturas = data.facturas || [];
-      gastos = data.gastos || [];
-      estadosModelos = data.estadosModelos || {};
-      guardarEnStorage();
-      renderDashboard(); renderFacturas(); renderGastos();
-      alert('✅ Datos importados correctamente.');
-    } catch(err) { alert('Error al importar: ' + err.message); }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-function borrarTodosLosDatos() {
-  if (!confirm('⚠️ ¿Borrar TODOS los datos? Esta acción no se puede deshacer.')) return;
-  if (!confirm('Última confirmación: ¿seguro que quieres borrar todo?')) return;
-  facturas = []; gastos = []; estadosModelos = {};
-  localStorage.removeItem('facturas_v2');
-  localStorage.removeItem('gastos_v2');
-  localStorage.removeItem('estadosModelos_v2');
-  renderDashboard(); renderFacturas(); renderGastos();
-  alert('🗑 Todos los datos han sido eliminados.');
-}
-
-// ═══════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════
-
-function fmt(n) { return parseFloat(n||0).toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2}); }
-function round2(n) { return Math.round(n * 100) / 100; }
-function hoyISO() { return new Date().toISOString().split('T')[0]; }
-function getAnyo(fecha) { return fecha ? parseInt(fecha.split('-')[0]) : 0; }
-function getTrimestre(fecha) { if (!fecha) return 0; const m = parseInt(fecha.split('-')[1]); return Math.ceil(m/3); }
-function formatFecha(f) { if (!f) return '–'; const [y,m,d] = f.split('-'); return `${d}/${m}/${y}`; }
-function esc(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function poblarFiltrosAnyo() {
-  const anyos = [2024, 2025, 2026, 2027];
-  ['m303-anyo','m130-anyo','m349-anyo'].forEach(id => {
-    const el = document.getElementById(id);
-    const cur = new Date().getFullYear();
-    el.innerHTML = anyos.map(a => `<option value="${a}" ${a===cur?'selected':''}>${a}</option>`).join('');
-  });
-  // Auto-seleccionar trimestre actual
-  const trimActual = getTrimestre(hoyISO());
-  ['m303-trim','m130-trim','m349-trim'].forEach(id => {
-    document.getElementById(id).value = trimActual;
-  });
-}
-
-function poblarSelectorAnyo() {
-  const anyos = [...new Set([...facturas.map(f=>getAnyo(f.fecha)), ...gastos.map(g=>getAnyo(g.fecha)), new Date().getFullYear()])].sort((a,b)=>b-a);
-  ['fac-filtro-anyo','gas-filtro-anyo'].forEach(id => {
-    const el = document.getElementById(id);
-    el.innerHTML = '<option value="todos">Todos</option>' + anyos.map(a=>`<option value="${a}">${a}</option>`).join('');
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════
-
-document.addEventListener('DOMContentLoaded', () => {
-  cargarDatos();
-  verificarConfiguracion();
-  poblarFiltrosAnyo();
-  poblarSelectorAnyo();
-  limpiarFormFactura();
-  limpiarFormGasto();
-  renderDashboard();
-  renderFacturas();
-  renderGastos();
-  renderTramosAutonomos();
-});
-</script>
-</body>
-</html>
+function marcarPresentado(m){const y=new Date().getFullYear(),t=getTrimestre(hoyISO());estadosModelos[`${t}T ${y}_presentado`]=true;guardarEnStorage();renderDashboard();alert('Presentado');}
+document.addEventListener('DOMContentLoaded',()=>{cargarDatos();verificarConfiguracion();renderDashboard();renderFacturas();renderGastos();});
+</script></body></html>
