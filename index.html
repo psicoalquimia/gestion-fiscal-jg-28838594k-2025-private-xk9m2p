@@ -715,9 +715,50 @@ function calcularModelo190() {
 
 // ─── Exportar / Importar ──────────────────────────────────────
 function exportarLibroRegistro() {
-  let csv = "Fecha;Numero;Cliente;Base;IVA%;Cuota IVA;IRPF%;Retencion IRPF;Total\n";
-  facturas.forEach(f => csv += `${f.fecha};${f.num||''};${f.cliente||''};${f.base};${f.ivaPct};${f.iva.toFixed(2)};${f.irpfPct};${f.irpf.toFixed(2)};${f.total.toFixed(2)}\n`);
-  descargar(csv, 'Libro_Registro_Facturas.csv', 'text/csv');
+  const BOM = '\uFEFF'; // Para que Excel reconozca UTF-8 correctamente
+  const cabecera = [
+    'Fecha',
+    'Número Factura',
+    'Cliente',
+    'Base Imponible',
+    'Tipo IVA %',
+    'Cuota IVA',
+    'Tipo IRPF %',
+    'Retención IRPF',
+    'Total Factura',
+    'Tipo Operación'
+  ].join(';');
+
+  const tipoLabel = {
+    sesion: 'Sesión Psicología (Exenta)',
+    libro_papel: 'Libro Papel (4%)',
+    libro_ebook: 'Ebook / Digital (21%)',
+    otros: 'Otros (21%)'
+  };
+
+  const filas = [...facturas]
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map(f => [
+      f.fecha,
+      f.num || '',
+      f.cliente || '',
+      (f.base || 0).toFixed(2).replace('.', ','),
+      f.ivaPct,
+      (f.iva || 0).toFixed(2).replace('.', ','),
+      f.irpfPct,
+      (f.irpf || 0).toFixed(2).replace('.', ','),
+      (f.total || 0).toFixed(2).replace('.', ','),
+      tipoLabel[f.tipo] || f.tipo || ''
+    ].join(';'));
+
+  const csv = BOM + [cabecera, ...filas].join('\r\n');
+  const uri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  const a = document.createElement('a');
+  a.href = uri;
+  a.download = `Libro_Registro_Facturas_${new Date().getFullYear()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 function exportarDatos() {
   const data = JSON.stringify({ facturas, gastos, estadosModelos, config }, null, 2);
