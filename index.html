@@ -111,7 +111,7 @@ tbody tr:hover{background:var(--surface2);}
     <div id="headerInfo" style="font-size:.8rem;color:var(--text2);margin-top:.15rem;"></div>
   </div>
   <div class="flex-row">
-    <button class="btn btn-ghost btn-sm" onclick="exportarLibroRegistro()">📥 Libro Registro CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportarLibroRegistro()">📥 Exportar Libro Registro (.xlsx)</button>
     <button class="btn btn-ghost btn-sm" onclick="abrirConfiguracion()">⚙️ Config</button>
   </div>
 </header>
@@ -715,50 +715,143 @@ function calcularModelo190() {
 
 // ─── Exportar / Importar ──────────────────────────────────────
 function exportarLibroRegistro() {
-  const BOM = '\uFEFF'; // Para que Excel reconozca UTF-8 correctamente
-  const cabecera = [
-    'Fecha',
-    'Número Factura',
-    'Cliente',
-    'Base Imponible',
-    'Tipo IVA %',
-    'Cuota IVA',
-    'Tipo IRPF %',
-    'Retención IRPF',
-    'Total Factura',
-    'Tipo Operación'
-  ].join(';');
+  if (typeof XLSX === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = () => _generarExcelHacienda();
+    script.onerror = () => alert('No se pudo cargar la librería de Excel. Comprueba tu conexión a internet.');
+    document.head.appendChild(script);
+  } else {
+    _generarExcelHacienda();
+  }
+}
+
+function _generarExcelHacienda() {
+  const wb = XLSX.utils.book_new();
 
   const tipoLabel = {
-    sesion: 'Sesión Psicología (Exenta)',
-    libro_papel: 'Libro Papel (4%)',
-    libro_ebook: 'Ebook / Digital (21%)',
+    sesion: 'Exenta (Psicología)',
+    libro_papel: 'Libro papel (4%)',
+    libro_ebook: 'Ebook/Digital (21%)',
     otros: 'Otros (21%)'
   };
 
-  const filas = [...facturas]
+  // ── HOJA 1: Facturas Emitidas ─────────────────────────────
+  const facCabecera = [
+    'Fecha', 'Nº Factura', 'NIF Emisor', 'Nombre Emisor',
+    'Cliente', 'Tipo Operación',
+    'Base Imponible (€)', 'Tipo IVA (%)', 'Cuota IVA (€)',
+    'Tipo IRPF (%)', 'Retención IRPF (€)', 'Total Factura (€)'
+  ];
+  const facFilas = [...facturas]
     .sort((a, b) => a.fecha.localeCompare(b.fecha))
     .map(f => [
-      f.fecha,
-      f.num || '',
-      f.cliente || '',
-      (f.base || 0).toFixed(2).replace('.', ','),
-      f.ivaPct,
-      (f.iva || 0).toFixed(2).replace('.', ','),
-      f.irpfPct,
-      (f.irpf || 0).toFixed(2).replace('.', ','),
-      (f.total || 0).toFixed(2).replace('.', ','),
-      tipoLabel[f.tipo] || f.tipo || ''
-    ].join(';'));
+      f.fecha, f.num || '', config.nif || '', config.nombre || '',
+      f.cliente || '', tipoLabel[f.tipo] || f.tipo || '',
+      parseFloat((f.base||0).toFixed(2)), f.ivaPct||0,
+      parseFloat((f.iva||0).toFixed(2)), f.irpfPct||0,
+      parseFloat((f.irpf||0).toFixed(2)), parseFloat((f.total||0).toFixed(2))
+    ]);
+  facFilas.push([
+    '', '', '', '', '', 'TOTALES',
+    parseFloat(facturas.reduce((s,f)=>s+(f.base||0),0).toFixed(2)), '',
+    parseFloat(facturas.reduce((s,f)=>s+(f.iva||0),0).toFixed(2)), '',
+    parseFloat(facturas.reduce((s,f)=>s+(f.irpf||0),0).toFixed(2)),
+    parseFloat(facturas.reduce((s,f)=>s+(f.total||0),0).toFixed(2))
+  ]);
+  const wsFac = XLSX.utils.aoa_to_sheet([facCabecera, ...facFilas]);
+  _ajustarAnchuras(wsFac, [10,14,12,24,24,22,18,12,14,12,18,16]);
+  XLSX.utils.book_append_sheet(wb, wsFac, 'Facturas Emitidas');
 
-  const csv = BOM + [cabecera, ...filas].join('\r\n');
-  const uri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  const a = document.createElement('a');
-  a.href = uri;
-  a.download = `Libro_Registro_Facturas_${new Date().getFullYear()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  // ── HOJA 2: Gastos Deducibles ─────────────────────────────
+  const gasCabecera = [
+    'Fecha', 'Proveedor / Concepto',
+    'Base Imponible (€)', 'Tipo IVA (%)', 'Cuota IVA (€)', 'Total Gasto (€)'
+  ];
+  const gasFilas = [...gastos]
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map(g => [
+      g.fecha, g.proveedor || '',
+      parseFloat((g.base||0).toFixed(2)), g.ivaPct||0,
+      parseFloat((g.ivaEur||0).toFixed(2)), parseFloat((g.total||0).toFixed(2))
+    ]);
+  gasFilas.push([
+    '', 'TOTALES',
+    parseFloat(gastos.reduce((s,g)=>s+(g.base||0),0).toFixed(2)), '',
+    parseFloat(gastos.reduce((s,g)=>s+(g.ivaEur||0),0).toFixed(2)),
+    parseFloat(gastos.reduce((s,g)=>s+(g.total||0),0).toFixed(2))
+  ]);
+  const wsGas = XLSX.utils.aoa_to_sheet([gasCabecera, ...gasFilas]);
+  _ajustarAnchuras(wsGas, [10,32,18,12,14,16]);
+  XLSX.utils.book_append_sheet(wb, wsGas, 'Gastos Deducibles');
+
+  // ── HOJA 3: Resumen Trimestral ────────────────────────────
+  const mesesPorT = { 1:[1,2,3], 2:[4,5,6], 3:[7,8,9], 4:[10,11,12] };
+  const anyos = [...new Set([
+    ...facturas.map(f=>getAnyo(f.fecha)),
+    ...gastos.map(g=>getAnyo(g.fecha))
+  ])].filter(Boolean).sort();
+
+  const resCabecera = [
+    'Trimestre','Año',
+    'Ingresos Base (€)','IVA Repercutido (€)','IRPF Retenido (€)',
+    'Gastos Base (€)','IVA Soportado (€)',
+    'IVA a Liquidar (€)','Beneficio Bruto (€)'
+  ];
+  const resFilas = [];
+  anyos.forEach(y => {
+    [1,2,3,4].forEach(t => {
+      const ms = mesesPorT[t];
+      const fT = facturas.filter(f=>{const d=new Date(f.fecha);return d.getFullYear()===y&&ms.includes(d.getMonth()+1);});
+      const gT = gastos.filter(g=>{const d=new Date(g.fecha);return d.getFullYear()===y&&ms.includes(d.getMonth()+1);});
+      if(!fT.length&&!gT.length) return;
+      const iB=fT.reduce((s,f)=>s+(f.base||0),0);
+      const iR=fT.reduce((s,f)=>s+(f.iva||0),0);
+      const iP=fT.reduce((s,f)=>s+(f.irpf||0),0);
+      const gB=gT.reduce((s,g)=>s+(g.base||0),0);
+      const gS=gT.reduce((s,g)=>s+(g.ivaEur||0),0);
+      resFilas.push([`${t}T`, y,
+        parseFloat(iB.toFixed(2)), parseFloat(iR.toFixed(2)), parseFloat(iP.toFixed(2)),
+        parseFloat(gB.toFixed(2)), parseFloat(gS.toFixed(2)),
+        parseFloat((iR-gS).toFixed(2)), parseFloat((iB-gB).toFixed(2))
+      ]);
+    });
+  });
+  const wsRes = XLSX.utils.aoa_to_sheet([resCabecera, ...resFilas]);
+  _ajustarAnchuras(wsRes, [12,8,18,20,18,16,18,18,18]);
+  XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen Trimestral');
+
+  // ── HOJA 4: Resumen Anual ─────────────────────────────────
+  const anCabecera = [
+    'Año',
+    'Total Ingresos Base (€)','Total IVA Repercutido (€)','Total IRPF Retenido (€)',
+    'Total Gastos Base (€)','Total IVA Soportado (€)',
+    'IVA Anual a Liquidar (€)','Beneficio Neto (€)'
+  ];
+  const anFilas = anyos.map(y => {
+    const fY=facturas.filter(f=>getAnyo(f.fecha)===y);
+    const gY=gastos.filter(g=>getAnyo(g.fecha)===y);
+    const iB=fY.reduce((s,f)=>s+(f.base||0),0);
+    const iR=fY.reduce((s,f)=>s+(f.iva||0),0);
+    const iP=fY.reduce((s,f)=>s+(f.irpf||0),0);
+    const gB=gY.reduce((s,g)=>s+(g.base||0),0);
+    const gS=gY.reduce((s,g)=>s+(g.ivaEur||0),0);
+    return [y,
+      parseFloat(iB.toFixed(2)), parseFloat(iR.toFixed(2)), parseFloat(iP.toFixed(2)),
+      parseFloat(gB.toFixed(2)), parseFloat(gS.toFixed(2)),
+      parseFloat((iR-gS).toFixed(2)), parseFloat((iB-gB).toFixed(2))
+    ];
+  });
+  const wsAn = XLSX.utils.aoa_to_sheet([anCabecera, ...anFilas]);
+  _ajustarAnchuras(wsAn, [8,22,22,20,20,20,22,18]);
+  XLSX.utils.book_append_sheet(wb, wsAn, 'Resumen Anual');
+
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `Libro_Registro_Fiscal_${fecha}.xlsx`);
+}
+
+function _ajustarAnchuras(ws, anchos) {
+  ws['!cols'] = anchos.map(w => ({ wch: w }));
 }
 function exportarDatos() {
   const data = JSON.stringify({ facturas, gastos, estadosModelos, config }, null, 2);
